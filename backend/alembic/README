@@ -1,0 +1,60 @@
+app/
+├── main.py                   # エントリーポイント
+├── core/
+│   ├── config.py             # 設定（DB URL, ENV など）
+│   ├── security.py           # 認証JWT生成など
+│   └── database.py           # DB接続 (SQLAlchemy SessionLocal)
+│
+├── models/                   # DBモデル（SQLAlchemy）
+│   ├── user.py
+│   ├── interviewer.py
+│   ├── interview.py
+│   ├── feedback.py
+│   ├── payment.py
+│   ├── reward.py
+│   └── schedule.py
+│
+├── schemas/                  # Pydanticスキーマ（Request/Response）
+│   ├── user.py
+│   ├── interviewer.py
+│   ├── interview.py
+│   ├── feedback.py
+│   ├── payment.py
+│   ├── reward.py
+│   └── schedule.py
+│
+├── crud/                     # CRUDロジック（DB操作）
+│   ├── user.py
+│   ├── interviewer.py
+│   ├── interview.py
+│   ├── feedback.py
+│   ├── payment.py
+│   ├── reward.py
+│   └── schedule.py
+│
+├── api/
+│   ├── deps.py               # 依存性（認証・DB session）
+│   ├── v1/
+│   │   ├── user.py           # /users API
+│   │   ├── interviewer.py    # /interviewers API
+│   │   ├── interview.py      # /interviews API
+│   │   ├── feedback.py
+│   │   ├── payment.py
+│   │   ├── reward.py
+│   │   └── schedule.py
+│   └── router.py             # v1 のルータまとめ
+│
+├── services/                 # ビジネスロジック（例: 予約ロジック）
+│   ├── booking_service.py    # スケジュール確認・予約処理
+│   ├── payment_service.py    # Stripe等の決済処理
+│   └── reward_service.py     # 報酬計算
+│
+├── tests/                    # テスト
+│   ├── api/
+│   ├── crud/
+│   └── models/
+│
+└── alembic/                  # マイグレーション
+    ├── env.py
+    ├── versions/
+    └── README

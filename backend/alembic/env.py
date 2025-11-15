@@ -1,0 +1,8 @@
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/mydb
+
+# JWT
+SECRET_KEY=my_very_secret_key
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=1440
+REFRESH_TOKEN_EXPIRE_DAYS=7 

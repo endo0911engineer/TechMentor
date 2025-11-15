@@ -1,0 +1,28 @@
+from pydantic import BaseModel
+from datetime import datetime
+from enum import Enum
+
+
+class InterviewStatus(str, Enum):
+    scheduled = "scheduled"
+    completed = "completed"
+    canceled = "canceled"
+
+
+class InterviewBase(BaseModel):
+    user_id: int
+    interviewer_id: int
+    scheduled_at: datetime
+    duration_min: int
+    status: InterviewStatus = InterviewStatus.scheduled
+
+
+class InterviewCreate(InterviewBase):
+    pass
+
+
+class InterviewResponse(InterviewBase):
+    id: int
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
