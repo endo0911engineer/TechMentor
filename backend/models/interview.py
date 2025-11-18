@@ -1,5 +1,5 @@
 # app/models/interview.py
-from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP, Enum, func
+from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP, Enum, String, func
 from sqlalchemy.orm import relationship
 import enum
 from backend.core.database import Base
@@ -20,6 +20,8 @@ class Interview(Base):
     duration_min = Column(Integer, nullable=False)
     status = Column(Enum(InterviewStatus), nullable=False, default=InterviewStatus.scheduled)
 
+    meet_url = Column(String, nullable=True)
+    
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { LogIn } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { login } from "../lib/auth";
+import { login } from "../../lib/auth";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -13,9 +13,13 @@ export default function LoginPage() {
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        await login(email, password);
+        const result = await login(email, password);
 
-        router.push("/profile");
+        if (result.role === "interviewer") {
+          router.push("/interviewer/dashboard");
+        } else {
+          router.push("/user/dashboard");
+        }
     };
 
   return (

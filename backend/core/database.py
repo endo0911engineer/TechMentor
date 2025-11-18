@@ -5,7 +5,7 @@ from backend.core.config import settings
 
 engine = create_engine(
     settings.DATABASE_URL,
-    echo=False,
+    echo=True,
     future=True,
 )
 

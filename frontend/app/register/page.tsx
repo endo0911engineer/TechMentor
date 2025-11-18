@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { register } from "../lib/auth";
+import { register } from "../../lib/auth";
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -15,9 +15,9 @@ export default function RegisterPage() {
 
     await register(email, password);
 
-    router.push("/profile");
+    router.push("user/profile");
   };
-
+  
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow">
