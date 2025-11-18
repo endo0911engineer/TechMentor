@@ -13,14 +13,6 @@ from backend.crud import interviewer as crud_interviewer
 
 router = APIRouter()
 
-# 面接官登録（公開）
-@router.post("/register", response_model=InterviewerResponse, status_code=status.HTTP_201_CREATED)
-def create_interviewer(interviewer_in: InterviewerCreate, db: Session = Depends(get_db)):
-    existing = crud_interviewer.get_interviewer_by_email(db, interviewer_in.email)
-    if existing:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
-    return crud_interviewer.create_interviewer(db, interviewer_in)
-
 # 面接官自身の情報取得
 @router.get("/me", response_model=InterviewerResponse)
 def read_own_profile(current_interviewer = Depends(get_current_interviewer)):
