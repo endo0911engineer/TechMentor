@@ -52,8 +52,7 @@ def get_payment_status(
 def update_payment_status(
     payment_id: int,
     payment_in: PaymentUpdate,
-    db: Session = Depends(get_db),
-    admin=Depends(get_current_admin)  # or webhook
+    db: Session = Depends(get_db)
 ):
     payment = crud_payment.get_payment(db, payment_id)
     if not payment:

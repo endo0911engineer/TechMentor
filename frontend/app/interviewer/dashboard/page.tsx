@@ -18,7 +18,7 @@ export default function InterviewerDashboardPage() {
         const me = await fetchProfile();
 
         if (me.role !== "interviewer") {
-          router.push("/dashboard/user");
+          router.push("../../user/dashboard");
           return;
         }
 
@@ -28,7 +28,7 @@ export default function InterviewerDashboardPage() {
         setBookings(list);
       } catch (err) {
         console.error(err);
-        router.push("/login");
+        router.push("../../login");
       } finally {
         setLoading(false);
       }
@@ -87,7 +87,7 @@ export default function InterviewerDashboardPage() {
                   </button>
                   <button
                     className="px-3 py-1 bg-red-600 text-white rounded"
-                    onClick={() => router.push(`/interviewer/booking/${b.id}/reject`)}
+                    onClick={() => router.push(`../interviewer/booking/${b.id}/reject`)}
                   >
                     拒否
                   </button>
