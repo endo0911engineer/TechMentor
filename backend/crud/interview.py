@@ -7,7 +7,6 @@ import uuid
 from backend.service.meet import generate_meet_url
 
 
-
 def get_interview(db: Session, interview_id: int) -> Interview | None:
     return db.query(Interview).filter(Interview.id == interview_id).first()
 

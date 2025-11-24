@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     # DB接続設定
     DATABASE_URL: PostgresDsn
 
-    # JWT設定（後で使う）
+    
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 1日

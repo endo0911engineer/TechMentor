@@ -1,81 +1,114 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchProfile, Profile } from "@/lib/user";
-import { getMyInterviews, Interview } from "@/lib/interview";
+import { useRouter } from "next/navigation";
+import { fetchProfile } from "@/lib/profile";
+import { getMyInterviews } from "@/lib/interview";
 
-export default function InterviewerDashboard() {
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [interviews, setInterviews] = useState<Interview[]>([]);
+export default function InterviewerDashboardPage() {
+  const router = useRouter();
+
+  const [profile, setProfile] = useState<any>(null);
+  const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadData() {
+    async function load() {
       try {
-        const [p, ivs] = await Promise.all([getMyProfile(), getMyInterviews()]);
-        setProfile(p);
-        setInterviews(ivs);
+        const me = await fetchProfile();
+
+        if (me.role !== "interviewer") {
+          router.push("/dashboard/user");
+          return;
+        }
+
+        setProfile(me);
+
+        const list = await getMyInterviews();
+        setBookings(list);
       } catch (err) {
         console.error(err);
+        router.push("/login");
       } finally {
         setLoading(false);
       }
     }
-    loadData();
+
+    load();
   }, []);
 
   if (loading) return <div>Loading...</div>;
-  if (!profile) return <div>プロフィールが見つかりません</div>;
+
+  const pending = bookings.filter(b => b.status === "pending");
+  const confirmed = bookings.filter(b => b.status === "confirmed");
 
   return (
-    <div className="min-h-screen p-6 bg-slate-900 text-white">
-      <h1 className="text-3xl font-bold mb-6">面接官ダッシュボード</h1>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold">面接官ダッシュボード</h1>
 
-      {/* 基本プロフィール */}
-      <section className="mb-8 p-6 bg-slate-800 rounded-lg">
-        <h2 className="text-2xl font-semibold mb-4">基本情報</h2>
-        <p><strong>名前:</strong> {profile.name}</p>
-        <p><strong>Email:</strong> {profile.email}</p>
-        <p><strong>スキル:</strong> {profile.skill ?? "未設定"}</p>
-        <p><strong>経験年数:</strong> {profile.experience ?? "未設定"}</p>
-        <p><strong>希望職種:</strong> {profile.job_type ?? "未設定"}</p>
-        <p><strong>時給:</strong> {profile.hourly_rate ?? "未設定"} 円</p>
-      </section>
+      <h2 className="text-lg font-semibold mt-4">
+        {profile.name} さん（面接官）
+      </h2>
 
-      <section className="mb-8 p-6 bg-slate-800 rounded-lg">
-        <h2 className="text-2xl font-semibold mb-4">マッチング状況（面接依頼）</h2>
-        {interviews.length === 0 ? (
-            <p>まだ依頼はありません</p>
+      {/* プロフィール編集 */}
+      <button
+        className="px-4 py-2 bg-blue-600 text-white rounded mt-4"
+        onClick={() => router.push("/interviewer/profile/edit")}
+      >
+        面接官プロフィール編集
+      </button>
+
+      {/* 履歴ページ */}
+      <button
+        className="px-4 py-2 bg-gray-600 text-white rounded mt-4 ml-4"
+        onClick={() => router.push("/interviewer/history")}
+      >
+        面接履歴
+      </button>
+
+      {/* ---- 面接依頼 Pending ---- */}
+      <section className="mt-10">
+        <h3 className="text-xl font-semibold">保留中の面接依頼</h3>
+        {pending.length === 0 ? (
+          <p className="mt-2">現在、保留中の依頼はありません。</p>
         ) : (
-        <ul>
-            {interviews.map(iv => (
-                <li key={iv.id} className="mb-2 p-2 bg-slate-700 rounded">
-                    <p><strong>候補者:</strong> {iv.candidate_name}</p>
-                    <p><strong>日時:</strong> {new Date(iv.scheduled_at).toLocaleString()}</p>
-                    <p><strong>ステータス:</strong> {iv.status}</p>
-                    {iv.message && <p><strong>メッセージ:</strong> {iv.message}</p>}
-                    {iv.status === "pending" && (
-                        <div className="mt-2">
-                            <button className="mr-2 px-3 py-1 bg-green-500 rounded">承認</button>
-                            <button className="px-3 py-1 bg-red-500 rounded">拒否</button>
-                        </div>
-                    )}
-                </li>
-          ))}
-        </ul>
+          <ul className="mt-2 space-y-3">
+            {pending.map(b => (
+              <li key={b.id} className="p-4 border rounded bg-yellow-50">
+                <p><strong>候補者ID:</strong> {b.user_id}</p>
+                <p><strong>日時:</strong> {b.scheduled_at}</p>
+                <p><strong>メッセージ:</strong> {b.message}</p>
+                <div className="mt-3 flex gap-3">
+                  <button
+                    className="px-3 py-1 bg-green-600 text-white rounded"
+                    onClick={() => router.push(`/interviewer/booking/${b.id}/confirm`)}
+                  >
+                    承認
+                  </button>
+                  <button
+                    className="px-3 py-1 bg-red-600 text-white rounded"
+                    onClick={() => router.push(`/interviewer/booking/${b.id}/reject`)}
+                  >
+                    拒否
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
 
-      {/* 面接スケジュール */}
-      <section className="mb-8 p-6 bg-slate-800 rounded-lg">
-        <h2 className="text-2xl font-semibold mb-4">面接スケジュール</h2>
-        {interviews.length === 0 ? (
-          <p>まだ面接はありません</p>
+      {/* ---- Confirmed ---- */}
+      <section className="mt-10">
+        <h3 className="text-xl font-semibold">確定済みの面接</h3>
+        {confirmed.length === 0 ? (
+          <p className="mt-2">確定済みの予定はありません。</p>
         ) : (
-          <ul>
-            {interviews.map(iv => (
-              <li key={iv.id}>
-                {iv.candidate_name} - {new Date(iv.scheduled_at).toLocaleString()} - {iv.status}
+          <ul className="mt-3 space-y-2">
+            {confirmed.map(b => (
+              <li key={b.id} className="p-4 border rounded bg-green-50">
+                <p><strong>候補者ID:</strong> {b.user_id}</p>
+                <p><strong>日時:</strong> {b.scheduled_at}</p>
               </li>
             ))}
           </ul>

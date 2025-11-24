@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchProfile } from "@/lib/user";
-import { fetchInterviewers } from "@/lib/interviewer";
-import { fetchMyBookings } from "@/lib/match";
 import { useRouter } from "next/navigation";
+import { fetchProfile } from "@/lib/profile";
+import { fetchInterviewers } from "@/lib/interviewer";
+import { getMyInterviews } from "@/lib/interview";
 
-export default function DashboardPage() {
+export default function UserDashboardPage() {
   const router = useRouter();
 
   const [profile, setProfile] = useState<any>(null);
@@ -18,15 +18,18 @@ export default function DashboardPage() {
     async function load() {
       try {
         const me = await fetchProfile();
+        if (me.role !== "user") {
+          router.push("/dashboard/interviewer");
+          return;
+        }
+
         setProfile(me);
 
-        const myBookings = await fetchMyBookings();
+        const myBookings = await getMyInterviews();
         setBookings(myBookings);
 
-        if (me.role === "user") {
-          const list = await fetchInterviewers();
-          setInterviewers(list);
-        }
+        const list = await fetchInterviewers();
+        setInterviewers(list);
       } catch (err) {
         console.error(err);
         router.push("/login");
@@ -41,47 +44,62 @@ export default function DashboardPage() {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div style={{ padding: 24 }}>
-      <h1>ダッシュボード</h1>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-6">ユーザーダッシュボード</h1>
 
-      <h2>ようこそ、{profile.name} さん</h2>
-      <p>ロール: {profile.role}</p>
+      <h2 className="text-lg font-semibold">ようこそ、{profile.name} さん</h2>
 
-      {/* 共通: 予約一覧 */}
-      <section style={{ marginTop: 40 }}>
-        <h3>あなたの予約一覧</h3>
+      {/* プロフィール編集 */}
+      <button
+        className="px-4 py-2 bg-blue-600 text-white rounded mt-4"
+        onClick={() => router.push("/profile/edit")}
+      >
+        プロフィール編集
+      </button>
 
+      {/* 予約一覧 */}
+      <section className="mt-8">
+        <h3 className="text-xl font-semibold mb-2">あなたの予約一覧</h3>
         {bookings.length === 0 ? (
           <p>まだ予約はありません。</p>
         ) : (
-          <ul>
+          <ul className="space-y-2">
             {bookings.map((b) => (
-              <li key={b.id}>
-                面接官ID: {b.interviewer_id} / {b.scheduled_at}
+              <li key={b.id} className="p-3 border rounded">
+                <p><strong>面接官ID:</strong> {b.interviewer_id}</p>
+                <p><strong>日時:</strong> {b.scheduled_at}</p>
+                <p>状態: {b.status}</p>
               </li>
             ))}
           </ul>
         )}
       </section>
 
-      {/* ロール別 UI */}
-      {profile.role === "user" ? (
-        <section style={{ marginTop: 40 }}>
-          <h3>面接官一覧</h3>
-          {interviewers.map((i) => (
-            <div key={i.id} style={{ border: "1px solid #ccc", padding: 12, marginBottom: 8 }}>
-              <p>名前: {i.name}</p>
-              <p>スキル: {i.skill}</p>
-              <p>時給: {i.hourly_rate}円</p>
-            </div>
-          ))}
-        </section>
-      ) : (
-        <section style={{ marginTop: 40 }}>
-          <h3>あなたに入っている予約</h3>
-          {/* bookings は interviewer でも同じ */}
-        </section>
-      )}
+      {/* 面接官一覧 */}
+      <section className="mt-10">
+        <div className="flex justify-between items-center">
+          <h3 className="text-xl font-semibold mb-2">面接官一覧</h3>
+
+          <button
+            className="px-4 py-2 bg-green-600 text-white rounded"
+            onClick={() => router.push("/interviewer/search")}
+          >
+            詳細検索
+          </button>
+        </div>
+
+        {interviewers.map((i) => (
+          <div
+            key={i.id}
+            className="p-4 border rounded mb-3 cursor-pointer hover:bg-gray-100"
+            onClick={() => router.push(`/interviewer/${i.id}/booking`)}
+          >
+            <p><strong>{i.name}</strong></p>
+            <p>スキル: {i.skill}</p>
+            <p>時給: {i.hourly_rate}円</p>
+          </div>
+        ))}
+      </section>
     </div>
   );
 }
