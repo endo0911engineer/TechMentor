@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from backend.core.config import settings
 
 engine = create_engine(
-    settings.DATABASE_URL,
+    str(settings.DATABASE_URL),
     echo=True,
     future=True,
 )

@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
+from typing import Optional
 
 class PaymentStatus(str, Enum):
     pending = "pending"
@@ -19,6 +20,17 @@ class PaymentBase(BaseModel):
 
 class PaymentCreate(PaymentBase):
     pass
+
+class PaymentUpdate(BaseModel):
+    """
+    決済情報を更新するためのスキーマ。
+    更新対象のフィールドは全て Optional (任意) とします。
+    """
+    user_id: Optional[int] = None
+    interview_id: Optional[int] = None
+    amount: Optional[Decimal] = None
+    status: Optional[PaymentStatus] = None 
+    payment_method: Optional[str] = None
 
 
 class PaymentResponse(PaymentBase):

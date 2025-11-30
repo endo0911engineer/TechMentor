@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchProfile } from "@/lib/profile";
 import { fetchInterviewers } from "@/lib/interviewer";
-import { getMyInterviews } from "@/lib/interview";
+import { fetchInterviews } from "@/lib/interview";
 
 export default function UserDashboardPage() {
   const router = useRouter();
@@ -25,7 +25,7 @@ export default function UserDashboardPage() {
 
         setProfile(me);
 
-        const myBookings = await getMyInterviews();
+        const myBookings = await fetchInterviews();
         setBookings(myBookings);
 
         const list = await fetchInterviewers();

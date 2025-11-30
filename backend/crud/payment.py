@@ -1,6 +1,6 @@
 # app/crud/payment.py
 from sqlalchemy.orm import Session
-from app.models.payment import Payment
+from backend.models.payment import Payment
 from typing import List
 
 def get_payment(db: Session, payment_id: int) -> Payment | None:

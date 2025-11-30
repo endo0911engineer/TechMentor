@@ -1,11 +1,11 @@
 # app/core/config.py
-from pydantic import BaseSettings, PostgresDsn
+from pydantic_settings import BaseSettings
+from pydantic import PostgresDsn
 
 class Settings(BaseSettings):
     # DB接続設定
     DATABASE_URL: PostgresDsn
 
-    
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 1日

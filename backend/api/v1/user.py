@@ -9,7 +9,7 @@ from backend.api.deps import get_db, get_current_user
 router = APIRouter()
 
 # 認証不要：ユーザー作成
-@router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def create_user(user_in: UserCreate, db: Session = Depends(get_db)):
     existing_user = crud_user.get_user_by_email(db, user_in.email)
     if existing_user:

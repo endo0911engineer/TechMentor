@@ -1,12 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
-
-from backend.api.deps import get_db, get_current_user, get_current_interviewer, get_current_admin
+from backend.api.deps import get_db, get_current_user
 from backend.schemas.payment import PaymentCreate, PaymentResponse, PaymentUpdate
-from backend.schemas.reward import RewardResponse
 from backend.crud import payment as crud_payment
-from backend.crud import reward as crud_reward
 
 router = APIRouter()
 

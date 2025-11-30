@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, User, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { register } from "../../lib/auth";
+import { register } from "../../lib/user";
 
 export default function RegisterPage() {
     const router = useRouter();
+    const [namem, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -62,6 +63,24 @@ export default function RegisterPage() {
 
           {/* Form */}
           <form onSubmit={handleRegister} className="space-y-5">
+            { /*Name Field */ }
+            <div className="space-y-2">
+              <label htmlFor="name" className="block text-sm font-medium text-slate-300">
+                お名前
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                <input
+                id="name"
+                type="text"
+                placeholder="山田 太郎"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-slate-700/50 border border-slate-600 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all"
+                required
+                />
+              </div>
+            </div>
             {/* Email Field */}
             <div className="space-y-2">
               <label htmlFor="email" className="block text-sm font-medium text-slate-300">

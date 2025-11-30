@@ -11,6 +11,10 @@ class FeedbackBase(BaseModel):
 class FeedbackCreate(FeedbackBase):
     pass
 
+class FeedbackUpdate(BaseModel):
+    score: int | None = None
+    comment: str | None = None
+
 
 class FeedbackResponse(FeedbackBase):
     id: int
