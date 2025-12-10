@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchProfile } from "@/lib/profile";
-import { getMyInterviews } from "@/lib/interview";
+import { fetchInterviews } from "@/lib/interview";
 
 export default function InterviewerDashboardPage() {
   const router = useRouter();
@@ -18,17 +18,17 @@ export default function InterviewerDashboardPage() {
         const me = await fetchProfile();
 
         if (me.role !== "interviewer") {
-          router.push("../../user/dashboard");
+          router.push("/user/dashboard");
           return;
         }
 
         setProfile(me);
 
-        const list = await getMyInterviews();
+        const list = await fetchInterviews();
         setBookings(list);
       } catch (err) {
         console.error(err);
-        router.push("../../login");
+        router.push("/login");
       } finally {
         setLoading(false);
       }

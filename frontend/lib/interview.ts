@@ -46,14 +46,14 @@ export interface InterviewDetail extends Interview {
  * 自分の面接一覧を取得
  */
 export async function fetchInterviews(): Promise<Interview[]> {
-  return apiClient("/interviews", { method: "GET" });
+  return apiClient("/api/interviews", { method: "GET" });
 }
 
 /**
  * 面接の詳細を取得
  */
 export async function fetchInterviewDetail(id: string): Promise<InterviewDetail> {
-  return apiClient(`/interviews/${id}`, { method: "GET" });
+  return apiClient(`/api/interviews/${id}`, { method: "GET" });
 }
 
 /**
@@ -62,7 +62,7 @@ export async function fetchInterviewDetail(id: string): Promise<InterviewDetail>
 export async function createInterviewRequest(
   payload: CreateInterviewPayload
 ): Promise<CreateInterviewResponse> {
-  return apiClient("/interviews", {
+  return apiClient("/api/interviews", {
     method: "POST",
     body: JSON.stringify(payload),
   });

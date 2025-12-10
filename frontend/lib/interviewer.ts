@@ -9,10 +9,9 @@ export interface Interviewer {
 }
 
 export async function fetchInterviewers(): Promise<Interviewer[]> {
-  const res = await apiClient("/api/v1/interviewers");
-  return res.json();
+  return await apiClient("/api/interviewers");
 }
 
 export async function fetchInterviewer(id: number): Promise<Interviewer> {
-  return apiClient(`/api/v1/interviewers/${id}`);
+  return apiClient(`/api/interviewers/${id}`);
 }

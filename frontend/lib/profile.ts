@@ -12,12 +12,13 @@ export interface UserProfile {
 }
 
 export async function fetchProfile(): Promise<UserProfile> {
-  return apiClient("/users/me");
+  return apiClient("/api/profile/me");
 }
 
 export async function updateProfile(data: Partial<UserProfile>) {
-  return apiClient("/users/me", {
+  return apiClient("/api/profile/me", {
     method: "PUT",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
 }

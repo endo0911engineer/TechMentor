@@ -7,7 +7,7 @@ import { register } from "../../lib/user";
 
 export default function RegisterPage() {
     const router = useRouter();
-    const [namem, setName] = useState("");
+    const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -32,7 +32,7 @@ export default function RegisterPage() {
 
     try {
       setLoading(true);
-      await register(email, password);
+      await register(name, email, password);
       router.push("/user/profile");
     } catch (err) {
       setError("登録に失敗しました。もう一度試してください。");

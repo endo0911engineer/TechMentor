@@ -4,7 +4,6 @@ export async function apiClient(path: string, options?: RequestInit) {
   const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
 
   const headers = {
-    "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options?.headers,
   };

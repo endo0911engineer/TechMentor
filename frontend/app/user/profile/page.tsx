@@ -22,48 +22,21 @@ export default function ProfilePage() {
     role: "user" as "user" | "interviewer",
   });
 
-  useEffect(() => {
-    async function loadProfile() {
-      try {
-        const data = await fetchProfile();
-        setForm({
-          name: data.name || "",
-          skill: data.skill || "",
-          experience: data.experience || 0,
-          job_type: data.job_type || "",
-          role: data.role,
-        });
-      } catch (error) {
-        router.push("/login");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadProfile();
-  }, [router]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     try {
-        await updateProfile(form);
-        if (form.role === "interviewer") {
-          router.push("interviewer/dashboard");
-        } else {
-          router.push("user/dashboard");
-        }
+      await updateProfile(form);
+        
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+
+      router.push("/login");
+
     } finally {
         setIsSaving(false);
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500"></div>
-      </div>
-    )
-  }
 
     return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">

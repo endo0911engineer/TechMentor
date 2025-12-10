@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Form
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 from backend.core.config import settings
 from backend.core.security import verify_password, create_access_token, create_refresh_token, decode_token
 from backend.crud import user as crud_user
@@ -10,7 +10,7 @@ from backend.crud import interviewer as crud_interviewer
 from backend.core.database import get_db
 from backend.schemas.token import TokenWithRefresh
 
-router = APIRouter(prefix="auth", tags=["auth"])
+router = APIRouter()
 
 @router.post("/token", response_model=TokenWithRefresh)
 def login_for_access_token(
@@ -31,15 +31,16 @@ def login_for_access_token(
     access_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     refresh_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
 
-    access_token = create_access_token(sub=str(user.id), role=user.role, expires_delta=access_expires)
-    refresh_token = create_refresh_token(sub=str(user.id), expires_delta=refresh_expires)
+    access_token = create_access_token(sub=str(user.id), extra_claims={"role": user.role}, expires_delta=access_expires)
+    refresh_token = create_refresh_token(sub=str(user.id), extra_claims={"role": user.role}, expires_delta=refresh_expires)
 
     return TokenWithRefresh(
         access_token=access_token,
         token_type="bearer",
-        access_expires_at=datetime.utcnow() + access_expires,
+        access_expires_at=datetime.now(timezone.utc) + access_expires,
         refresh_token=refresh_token,
-        refresh_expires_at=datetime.utcnow() + refresh_expires,
+        refresh_expires_at=datetime.now(timezone.utc) + refresh_expires,
+        role=user.role
     )
 
 @router.post("/token/refresh", response_model=TokenWithRefresh)
@@ -75,7 +76,8 @@ def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
     return TokenWithRefresh(
         access_token=new_access,
         token_type="bearer",
-        access_expires_at=datetime.utcnow() + access_expires,
+        access_expires_at=datetime.now(timezone.utc) + access_expires,
         refresh_token=new_refresh,
-        refresh_expires_at=datetime.utcnow() + refresh_expires,
+        refresh_expires_at=datetime.now(timezone.utc) + refresh_expires,
+        role=user.role
     )

@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getCurrentUser } from "@/lib/user";
+import { fetchMe } from "@/lib/user";
 import { updateProfile } from "@/lib/profile";
 
 export default function ProfileEditPage() {
   const [form, setForm] = useState({ name: "", bio: "", skills: "" });
 
   useEffect(() => {
-    getCurrentUser().then((user) => setForm(user));
+    fetchMe().then((user) => setForm(user));
   }, []);
 
   const onSave = async () => {

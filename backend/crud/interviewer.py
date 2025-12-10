@@ -13,12 +13,9 @@ def get_interviewer_by_email(db: Session, email: str) -> Interviewer | None:
 def get_interviewers(db: Session, skip: int = 0, limit: int = 100) -> List[Interviewer]:
     return db.query(Interviewer).offset(skip).limit(limit).all()
 
-def create_interviewer(db: Session, interviewer_in: InterviewerCreate) -> Interviewer:
-    from backend.core.security import get_password_hash
+def create_interviewer(db: Session, user_id: int, interviewer_in: InterviewerCreate) -> Interviewer:
     db_interviewer = Interviewer(
-        name=interviewer_in.name,
-        email=interviewer_in.email,
-        password_hash=get_password_hash(interviewer_in.password),
+        user_id=user_id,
         profile=interviewer_in.profile,
         hourly_rate=interviewer_in.hourly_rate,
     )

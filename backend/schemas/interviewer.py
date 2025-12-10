@@ -4,16 +4,15 @@ from datetime import datetime
 from decimal import Decimal
 
 class InterviewerBase(BaseModel):
-    name: str
-    email: EmailStr
-    profile: Optional[Any] = None
+    profile: Optional[dict] = None
     hourly_rate: Decimal
 
 class InterviewerCreate(InterviewerBase):
-    password: str
+    user_id: int
 
 class InterviewerResponse(InterviewerBase):
     id: int
+    user_id: int
     created_at: datetime
 
     model_config = {"from_attributes": True}

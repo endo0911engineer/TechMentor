@@ -3,6 +3,7 @@ import { apiClient } from "./api";
 export interface LoginResponse {
   access_token: string;
   refresh_token: string;
+  role: "user" | "interviewer";
   token_type: string;
   access_expires_at: string;
   refresh_expires_at: string;
@@ -13,13 +14,16 @@ export async function login(email: string, password: string): Promise<LoginRespo
   form.append("username", email);
   form.append("password", password);
   
-  const res = await apiClient("/auth/token", {
+  const data = await apiClient("/api/auth/token", {
     method: "POST",
-    body: form,
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      username: email,
+      password: password,
+    }),
   });
-
-  if (!res.ok) throw new Error("Login failed");
-  const data = await res.json();
 
   localStorage.setItem("access_token", data.access_token);
   localStorage.setItem("refresh_token", data.refresh_token);

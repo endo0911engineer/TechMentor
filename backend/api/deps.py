@@ -22,20 +22,13 @@ def decode_access_token(token: str) -> dict:
         )
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    """
-    JWT の sub クレームに user_id を含めている前提。
-    sub が "user:{id}" か "interviewer:{id}" を使い分ける設計にしても良いです。
-    ここでは token['sub'] に "user:{id}" を想定します。
-    """
     payload = decode_access_token(token)
     sub = payload.get("sub")
     if sub is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token: missing sub")
-    # 期待する sub の形式: "user:<id>"
-    if not str(sub).startswith("user:"):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token subject")
+   
     try:
-        user_id = int(sub.split(":", 1)[1])
+        user_id = int(sub)
     except Exception:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token subject format")
 

@@ -1,13 +1,16 @@
 import { apiClient } from "./api";
 
 export async function fetchMe() {
-  return apiClient("/auth/me", { method: "GET" });
+  return apiClient("/api/auth/me", { method: "GET" });
 }
 
 export async function register(name: string, email: string, password: string) {
   const res = await apiClient("/api/users/register", {
     method: "POST",
-    body: JSON.stringify({ name: name, email: email, password: password }),
+    headers: {
+      "Content-Type": "application/json", 
+    },
+    body: JSON.stringify({ name, email, password }),
   });
 
   localStorage.setItem("access_token", res.access_token);
