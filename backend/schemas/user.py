@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
+from typing import Literal
 
 class UserBase(BaseModel):
     name: str
@@ -23,6 +24,14 @@ class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+class ProfileCreateRequest(BaseModel):
+    name: str
+    skill: str
+    experience: int
+    job_type: str
+
+    role: Literal["user", "interviewer"]
 
 class ProfileUpdateRequest(BaseModel):
     skill: str

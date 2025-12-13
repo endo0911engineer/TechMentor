@@ -1,11 +1,11 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional, Any
+from typing import Optional
 from datetime import datetime
 from decimal import Decimal
 
 class InterviewerBase(BaseModel):
     profile: Optional[dict] = None
-    hourly_rate: Decimal
+    hourly_rate: Optional[Decimal] = None
 
 class InterviewerCreate(InterviewerBase):
     user_id: int

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchProfile, updateProfile } from "../../../lib/profile";
+import { fetchProfile, createProfile } from "@/lib/profile";
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -26,7 +26,7 @@ export default function ProfilePage() {
     e.preventDefault();
     setIsSaving(true);
     try {
-      await updateProfile(form);
+      await createProfile(form);
         
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");

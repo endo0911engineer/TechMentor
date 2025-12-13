@@ -13,9 +13,9 @@ def get_interviewer_by_email(db: Session, email: str) -> Interviewer | None:
 def get_interviewers(db: Session, skip: int = 0, limit: int = 100) -> List[Interviewer]:
     return db.query(Interviewer).offset(skip).limit(limit).all()
 
-def create_interviewer(db: Session, user_id: int, interviewer_in: InterviewerCreate) -> Interviewer:
+def create_interviewer(db: Session, interviewer_in: InterviewerCreate) -> Interviewer:
     db_interviewer = Interviewer(
-        user_id=user_id,
+        user_id=interviewer_in.user_id,
         profile=interviewer_in.profile,
         hourly_rate=interviewer_in.hourly_rate,
     )

@@ -1,7 +1,8 @@
 # app/api/v1/profile.py
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from backend.schemas.user import ProfileUpdateRequest, UserResponse
+from backend.schemas.user import ProfileUpdateRequest, ProfileCreateRequest, UserResponse
+from backend.schemas.interviewer import InterviewerCreate
 from backend.api.deps import get_db, get_current_user
 from backend.crud import user as crud_user
 
@@ -9,7 +10,7 @@ router = APIRouter()
 
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_200_OK)
 def create_initial_profile(
-    profile_in: ProfileUpdateRequest,
+    profile_in: ProfileCreateRequest,
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user),
 ):
@@ -28,7 +29,7 @@ def create_initial_profile(
         interviewer_in = InterviewerCreate(
             user_id=updated_user.id,
             profile=updated_user.profile,
-            hourly_rate=profile_in.hourly_rate,
+            hourly_rate=None,
         )
         create_interviewer(db, interviewer_in)
 

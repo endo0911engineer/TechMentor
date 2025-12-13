@@ -33,6 +33,7 @@ export default function RegisterPage() {
     try {
       setLoading(true);
       await register(name, email, password);
+      console.log("localStorage token after register:", localStorage.getItem("access_token"));
       router.push("/user/profile");
     } catch (err) {
       setError("登録に失敗しました。もう一度試してください。");

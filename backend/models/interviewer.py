@@ -11,6 +11,6 @@ class Interviewer(Base):
     user_id = Column(Integer, ForeignKey("users.id"), unique=True, index=True)
 
     profile = Column(JSON)
-    hourly_rate = Column(DECIMAL(10, 2), nullable=False)
+    hourly_rate = Column(DECIMAL(10, 2), nullable=True)
 
     user = relationship("User", back_populates="interviewer_profile")
