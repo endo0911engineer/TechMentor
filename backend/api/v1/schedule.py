@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from backend.api.deps import get_db, get_current_interviewer
+from backend.api.deps import get_db, get_current_interviewer, get_current_user
 from backend.schemas.schedule import (
     ScheduleCreate, 
     ScheduleResponse,
@@ -14,7 +14,7 @@ router = APIRouter()
 # ============================================================
 # 1. 空き時間枠の登録 (面接官専用)
 # ============================================================
-@router.post("/", response_model=ScheduleResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/me", response_model=ScheduleResponse, status_code=status.HTTP_201_CREATED)
 def create_schedule(
     schedule_in: ScheduleCreate,
     db: Session = Depends(get_db),
@@ -29,6 +29,17 @@ def create_schedule(
         interviewer_id=current_interviewer.id,
         schedule_in=schedule_in
     )
+
+@router.get("/me", response_model=list[ScheduleResponse])
+def list_my_schedules(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    return crud_schedule.get_schedules_by_interviewer(
+        db,
+        interviewer_id=current_user.id
+    )
+
 
 # ============================================================
 # 2. 面接官の空き時間枠一覧取得 (全ユーザーから参照可能)

@@ -10,7 +10,6 @@ export interface Interview {
   interviewer_name?: string;
   interviewer_id: number;
   user_id: number;
-  scheduled_at: string;
   status: "pending" | "confirmed" | "completed" | "canceled";
 }
 
@@ -59,7 +58,7 @@ export async function fetchInterviewDetail(id: string): Promise<InterviewDetail>
 /**
  * 面接リクエストの作成
  */
-export async function createInterviewRequest(
+export async function createInterview(
   payload: CreateInterviewPayload
 ): Promise<CreateInterviewResponse> {
   return apiClient("/api/interviews", {

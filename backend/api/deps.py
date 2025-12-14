@@ -37,21 +37,12 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     return user
 
-def get_current_interviewer(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    payload = decode_access_token(token)
-    sub = payload.get("sub")
-    if sub is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token: missing sub")
-    if not str(sub).startswith("interviewer:"):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token subject for interviewer")
-    try:
-        interviewer_id = int(sub.split(":", 1)[1])
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token subject format")
-
-    interviewer = crud_interviewer.get_interviewer(db, interviewer_id)
+def get_current_interviewer(current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+    interviewer = crud_interviewer.get_interviewer_by_user_id(db, user_id=current_user.id)
+    
     if not interviewer:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Interviewer not found")
+    
     return interviewer
 
 def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):

@@ -3,7 +3,6 @@ from datetime import datetime
 
 
 class ScheduleBase(BaseModel):
-    interviewer_id: int
     available_from: datetime
     available_to: datetime
 
@@ -14,6 +13,7 @@ class ScheduleCreate(ScheduleBase):
 
 class ScheduleResponse(ScheduleBase):
     id: int
+    interviewer_id: int
     created_at: datetime
     updated_at: datetime
 

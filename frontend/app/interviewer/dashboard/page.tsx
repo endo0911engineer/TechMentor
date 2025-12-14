@@ -66,6 +66,14 @@ export default function InterviewerDashboardPage() {
         面接履歴
       </button>
 
+      {/* 日程管理 */}
+      <button
+      className="px-4 py-2 bg-indigo-600 text-white rounded mt-4 ml-4"
+      onClick={() => router.push("/interviewer/schedules")}
+      >
+        面接可能日程の管理
+      </button>
+
       {/* ---- 面接依頼 Pending ---- */}
       <section className="mt-10">
         <h3 className="text-xl font-semibold">保留中の面接依頼</h3>

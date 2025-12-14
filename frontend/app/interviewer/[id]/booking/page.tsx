@@ -11,21 +11,21 @@ export default function BookingPage() {
   const params = useParams();
   const interviewerId = Number(params.id);
 
-  const [interviewer, setInterviewer] = useState<any>(null);
-  const [schedules, setSchedules] = useState("");
-  const [selectedScheduleId, setSelectedScheduleId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [interviewer, setInterviewer] = useState<any>(null);
+  const [schedules, setSchedules] = useState<any[]>([]);
+  const [selectedScheduleId, setSelectedScheduleId] = useState<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     async function load() {
       try {
-        const data = await Promise.all([
-            fetchInterviewer(interviewerId),
-            fetchInterviewerSchedules(interviewerId),
-        ]);
-        setInterviewer(data);
-        setSchedules(schedules);
+        const interviewerData = await fetchInterviewer(interviewerId);
+        const scheduleData = await fetchInterviewerSchedules(interviewerId);
+        
+        setInterviewer(interviewerData);
+        setSchedules(scheduleData);
       } catch (err) {
         setError("面接官情報の取得に失敗しました");
       } finally {
@@ -43,8 +43,11 @@ export default function BookingPage() {
       });
 
       router.push("/user/dashboard");
-    } catch (err) {
-      setError("予約に失敗しました");
+    } catch (e) {
+        console.error(e);
+        setError("予約に失敗しました");
+    } finally {
+        setSubmitting(false);
     }
   };
 
@@ -84,26 +87,15 @@ export default function BookingPage() {
     </ul>
     )}
 
+    {error && <p className="text-red-600 mb-3">{error}</p>}
 
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">希望日時</label>
-        <input
-          type="datetime-local"
-          className="border p-2 w-full rounded"
-          value={scheduledAt}
-          onChange={(e) => setScheduledAt(e.target.value)}
-        />
-      </div>
-
-      {error && <p className="text-red-600 mb-3">{error}</p>}
-
-      <button
-        className="w-full bg-blue-600 text-white py-2 rounded"
-        onClick={handleSubmit}
-        disabled={!scheduledAt}
-      >
+    <button
+    className="w-full bg-blue-600 text-white py-2 rounded"
+    onClick={handleSubmit}
+    disabled={!selectedScheduleId || submitting}
+    >
         予約する
-      </button>
+    </button>
     </div>
   );
 }
