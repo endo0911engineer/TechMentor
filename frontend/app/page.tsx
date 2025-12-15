@@ -1,6 +1,7 @@
 'use client'
 
 import { ChevronRight, Code, Users, Zap, Star, ArrowRight } from 'lucide-react'
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -23,9 +24,11 @@ export default function Home() {
             <a href="#" className="text-sm text-gray-400 hover:text-white transition">
               ブログ
             </a>
-            <button className="px-6 py-2 bg-white text-[#0a0e27] rounded-full font-medium hover:bg-gray-100 transition text-sm">
+            <Link href="/login">
+            <button className="px-6 py-2 bg-white text-[#0a0e27] rounded-full font-medium hover:bg-gray-100 transition text-sm cursor-pointer">
               ログイン
             </button>
+            </Link>
           </div>
         </div>
       </nav>
@@ -57,10 +60,12 @@ export default function Home() {
             </p>
             
             <div className="flex gap-4 justify-center flex-wrap">
-              <button className="px-8 py-4 bg-white text-[#0a0e27] rounded-full font-semibold hover:bg-gray-100 transition flex items-center gap-2">
+              <Link href="/register">
+              <button className="px-8 py-4 bg-white text-[#0a0e27] rounded-full font-semibold hover:bg-gray-100 transition flex items-center gap-2 cursor-pointer">
                 今すぐ始める
                 <ArrowRight size={20} />
               </button>
+              </Link>
               <button className="px-8 py-4 border-2 border-cyan-400/50 text-white rounded-full font-semibold hover:border-cyan-400 hover:bg-cyan-400/10 transition">
                 デモを見る
               </button>

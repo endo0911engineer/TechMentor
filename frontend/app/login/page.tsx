@@ -139,18 +139,6 @@ export default function LoginPage() {
             </p>
           </div>
         </div>
-
-        <div className="mt-6 text-center">
-          <p className="text-slate-400 text-xs mb-3">ロールを選択してください</p>
-          <div className="flex gap-3">
-            <button className="flex-1 px-3 py-2 bg-white/5 border border-blue-500/30 hover:border-blue-500 text-blue-400 text-sm font-medium rounded-lg transition-all duration-200 hover:bg-blue-500/10">
-              面接官
-            </button>
-            <button className="flex-1 px-3 py-2 bg-white/5 border border-cyan-500/30 hover:border-cyan-500 text-cyan-400 text-sm font-medium rounded-lg transition-all duration-200 hover:bg-cyan-500/10">
-              求職者
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
