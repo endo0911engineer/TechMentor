@@ -24,16 +24,3 @@ class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
-
-class ProfileCreateRequest(BaseModel):
-    name: str
-    skill: str
-    experience: int
-    job_type: str
-
-    role: Literal["user", "interviewer"]
-
-class ProfileUpdateRequest(BaseModel):
-    skill: str
-    experience: int
-    job_type: str

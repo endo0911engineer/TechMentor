@@ -1,34 +1,19 @@
 from pydantic import BaseModel
 from datetime import datetime
-from enum import Enum
+from typing import Optional, Literal
 
+InterviewStatus = Literal["scheduled", "completed", "canceled"]
 
-class InterviewStatus(str, Enum):
-    scheduled = "scheduled"
-    completed = "completed"
-    canceled = "canceled"
+class InterviewCreate(BaseModel):
+    slot_id: int
 
-
-class InterviewBase(BaseModel):
-    interviewer_id: int
-    scheduled_at: datetime
-    duration_min: int
-    status: InterviewStatus = InterviewStatus.scheduled
-    meet_url: str | None = None
-
-class InterviewCreate(InterviewBase):
-    interviewer_id: int
-    scheduled_at: datetime
-    duration_min: int
-
-
-class InterviewResponse(InterviewBase):
+class InterviewResponse(BaseModel):
     id: int
     user_id: int
-    created_at: datetime
+    interviewer_id: int
+    scheduled_at: datetime
+    duration_min: int
+    status: InterviewStatus
+    meet_url: Optional[str] = None
 
     model_config = {"from_attributes": True}
-
-class InterviewStatusUpdate(BaseModel):
-    status: InterviewStatus
-

@@ -1,17 +1,25 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional
-from datetime import datetime
-from decimal import Decimal
+from pydantic import BaseModel
+from typing import Optional, Literal
 
-class InterviewerBase(BaseModel):
-    profile: Optional[dict] = None
-    hourly_rate: Optional[Decimal] = None
+InterviewStyle = Literal["strict", "friendly", "realistic"]
+Level = Literal["junior", "mid", "senior", "staff", "principal"]
 
-class InterviewerCreate(InterviewerBase):
-    user_id: int
+class InterviewerProfileBase(BaseModel):
+    interview_style: InterviewStyle
+    strengths: list[str]
+    available_levels: list[Level]
 
-class InterviewerResponse(InterviewerBase):
-    id: int
-    user_id: int
+class InterviewerProfileCreate(InterviewerProfileBase):
+    pass
 
-    model_config = {"from_attributes": True}
+class InterviewerProfileUpdate(BaseModel):
+    interview_style: Optional[InterviewStyle] = None
+    strengths: Optional[list[str]] = None
+    available_levels: Optional[list[Level]] = None
+    bio: Optional[str] = None
+    current_company: Optional[str] = None
+    current_title: Optional[str] = None
+    years_of_interviewing: Optional[int] = None
+
+class InterviewerProfileResponse(InterviewerProfileBase):
+    bio: Optional[str] = None
