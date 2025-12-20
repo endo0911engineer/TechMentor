@@ -13,9 +13,9 @@ class User(Base):
     
     role = Column(Enum("user", "interviewer", "admin", name="user_role"), default="user")
     
-    profile = Column(JSON)
-    
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 
+    user_profile = relationship("UserProfile", back_populates="user", uselist=False)
     interviewer_profile = relationship("Interviewer", back_populates="user", uselist=False)
+    experiences = relationship("Experience", back_populates="user")
