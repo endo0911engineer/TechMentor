@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from backend.models.interview import Interview, InterviewStatus
 from backend.schemas.interview import InterviewCreate
 from typing import List
-import uuid
 from backend.service.meet import generate_meet_url
 
 

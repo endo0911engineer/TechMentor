@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import timedelta, datetime, timezone
 from typing import List
-from backend.schemas.user import UserCreate, UserResponse, LoginRequest, LoginResponse
+from backend.schemas.user import UserCreate, UserResponse
 from backend.crud import user as crud_user
 from backend.api.deps import get_db, get_current_user
 from backend.core.config import settings
@@ -57,4 +57,6 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return db_user
 
-
+@router.get("/me", response_model=UserResponse)
+def read_me(current_user = Depends(get_current_user)):
+    return current_user
