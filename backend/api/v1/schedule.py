@@ -2,12 +2,12 @@ from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from backend.api.deps import get_db, get_current_interviewer, get_current_user
-from backend.schemas.schedule import (
+from backend.schemas.interview_slot import (
     ScheduleCreate, 
     ScheduleResponse,
 )
-from backend.crud import schedule as crud_schedule 
-from backend.models.interviewer import Interviewer # 面接官モデル（CRUD関数からの戻り値の型ヒント用）
+from backend.crud import interview_slot as crud_schedule 
+from backend.models.interviewer_profile import Interviewer # 面接官モデル（CRUD関数からの戻り値の型ヒント用）
 
 router = APIRouter()
 

@@ -1,4 +1,4 @@
-# app/models/interview.py
+# app/models/interview_slot.py
 from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP, func, Boolean
 from sqlalchemy.orm import relationship
 from backend.core.database import Base

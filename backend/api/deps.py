@@ -6,7 +6,7 @@ from jose import jwt, JWTError
 from backend.core.database import get_db
 from backend.core.config import settings
 from backend.crud import user as crud_user
-from backend.crud import interviewer as crud_interviewer
+from backend.crud import interviewer_profile as crud_interviewer
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 

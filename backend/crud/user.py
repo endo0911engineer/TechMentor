@@ -26,8 +26,15 @@ def create_user(db: Session, user_in: UserCreate) -> User:
     return db_user
 
 def update_user(db: Session, db_user: User, update_data: dict) -> User:
+    allowed_fields = {
+        "name",
+        "role",
+    }
+
     for key, value in update_data.items():
-        setattr(db_user, key, value)
+        if key in allowed_fields:
+            setattr(db_user, key, value)
+    
     db.commit()
     db.refresh(db_user)
     return db_user

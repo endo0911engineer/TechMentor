@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP, Enum, String, fun
 from sqlalchemy.orm import relationship
 import enum
 from backend.core.database import Base
+from datetime import datetime, timedelta
 
 class InterviewStatus(str, enum.Enum):
     scheduled = "scheduled"      # 予約確定
@@ -48,3 +49,6 @@ class Interview(Base):
         "User",
         foreign_keys=[canceled_by_user_id]
     )
+
+    def can_be_cancelled(self) -> bool:
+        return self.scheduled_at >= datetime.utcnow() + timedelta(hours=24)

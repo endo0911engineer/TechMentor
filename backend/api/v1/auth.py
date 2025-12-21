@@ -6,7 +6,7 @@ from datetime import timedelta, datetime, timezone
 from backend.core.config import settings
 from backend.core.security import verify_password, create_access_token, create_refresh_token, decode_token
 from backend.crud import user as crud_user
-from backend.crud import interviewer as crud_interviewer
+from backend.crud import interviewer_profile as crud_interviewer
 from backend.core.database import get_db
 from backend.schemas.token import TokenWithRefresh
 

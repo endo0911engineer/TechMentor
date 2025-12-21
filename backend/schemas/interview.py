@@ -7,6 +7,9 @@ InterviewStatus = Literal["scheduled", "completed", "canceled"]
 class InterviewCreate(BaseModel):
     slot_id: int
 
+class InterviewStatusUpdate(BaseModel):
+    status: InterviewStatus
+
 class InterviewResponse(BaseModel):
     id: int
     user_id: int
