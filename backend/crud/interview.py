@@ -48,7 +48,7 @@ def create_interview(
 
     db.add(interview)
 
-    slot.is_available = False
+    crud_slot.mark_slot_unavailable(db, slot)
 
     db.commit()
     db.refresh(interview)
@@ -82,8 +82,9 @@ def cancel_interview(
         )
         .first()
     )
+    
     if slot:
-        slot.is_available = True
+        crud_slot.mark_slot_available(db, slot)
 
     db.commit()
     db.refresh(interview)
