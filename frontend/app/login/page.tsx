@@ -19,12 +19,8 @@ export default function LoginPage() {
         setIsLoading(true);
 
         try {
-          const result = await login(email, password);
-          if (result.role === "interviewer") {
-            router.push("/interviewer/dashboard");
-          } else {
-            router.push("/user/dashboard");
-          }
+          await login(email, password);
+          router.push("/");
         } catch (err) {
           setError("ログインに失敗しました。メールアドレスとパスワードを確認してください。")
         } finally {
