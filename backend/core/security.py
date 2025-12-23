@@ -1,9 +1,12 @@
 # app/core/security.py
+from fastapi import HTTPException
+from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from jose import jwt, JWTError
 from backend.core.config import settings
+from backend.models.user import User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -45,3 +48,27 @@ def decode_token(token: str) -> dict:
         return payload
     except JWTError as e:
         raise e
+
+
+def get_current_user_from_token(
+    token: str,
+    db: Session,
+) -> User:
+    try:
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+        )
+        user_id: int | None = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    return user

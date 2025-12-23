@@ -1,10 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { format } from "date-fns";
+
 import { fetchProfile } from "@/lib/profile";
 import { fetchInterviewers } from "@/lib/interviewer";
 import { fetchInterviews } from "@/lib/interview";
+import { logout } from "@/lib/auth";
+
+
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function UserDashboardPage() {
   const router = useRouter();
@@ -39,67 +60,168 @@ export default function UserDashboardPage() {
     }
 
     load();
-  }, []);
+  }, [router]);
 
-  if (loading) return <div>Loading...</div>;
+  const nextInterview = useMemo(() => {
+    return bookings
+      .filter((b:any) => b.status === "scheduled")
+      .sort(
+        (a:any, b:any) =>
+          new Date(a.scheduled_at).getTime() -
+          new Date(b.scheduled_at).getTime()
+      )[0];
+  }, [bookings]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen text-muted-foreground">
+        Loading...
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">ユーザーダッシュボード</h1>
+    <div className="min-h-screen bg-zinc-50">
+      {/* Header */}
+            <header className="border-b bg-white">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+          <h1 className="text-xl font-semibold text-zinc-800">
+            ダッシュボード
+          </h1>
 
-      <h2 className="text-lg font-semibold">ようこそ、{profile.name} さん</h2>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="outline-none">
+              <Avatar>
+                <AvatarFallback>
+                  {profile.name?.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
 
-      {/* プロフィール編集 */}
-      <button
-        className="px-4 py-2 bg-blue-600 text-white rounded mt-4"
-        onClick={() => router.push("/user/profile/edit")}
-      >
-        プロフィール編集
-      </button>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => router.push("/user/profile/edit")}
+              >
+                プロフィール編集
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-red-600"
+                onClick={() => {
+                  logout();
+                  router.push("/login");
+                }}
+              >
+                ログアウト
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
 
-      {/* 予約一覧 */}
-      <section className="mt-8">
-        <h3 className="text-xl font-semibold mb-2">あなたの予約一覧</h3>
-        {bookings.length === 0 ? (
-          <p>まだ予約はありません。</p>
-        ) : (
-          <ul className="space-y-2">
-            {bookings.map((b) => (
-              <li key={b.id} className="p-3 border rounded">
-                <p><strong>面接官ID:</strong> {b.interviewer_id}</p>
-                <p><strong>日時:</strong> {b.scheduled_at}</p>
-                <p>状態: {b.status}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      {/* Main */}
+      <main className="max-w-6xl mx-auto px-6 py-10 space-y-10">
+        {/* Welcome */}
+        <section>
+          <h2 className="text-2xl font-bold text-zinc-900">
+            ようこそ、{profile.name} さん
+          </h2>
+          <p className="text-muted-foreground mt-1">
+            面接の予約・確認ができます
+          </p>
+        </section>
 
-      {/* 面接官一覧 */}
-      <section className="mt-10">
-        <div className="flex justify-between items-center">
-          <h3 className="text-xl font-semibold mb-2">面接官一覧</h3>
+        {/* Next Interview */}
+        <section>
+          <Card>
+            <CardHeader>
+              <CardTitle>次の面接</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {nextInterview ? (
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="font-medium">
+                      {format(
+                        new Date(nextInterview.scheduled_at),
+                        "yyyy/MM/dd HH:mm"
+                      )}
+                    </p>
+                    <Badge variant="secondary">
+                      {nextInterview.status}
+                    </Badge>
+                  </div>
 
-          <button
-            className="px-4 py-2 bg-green-600 text-white rounded"
+                  {nextInterview.meet_url && (
+                    <Button
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                      onClick={() =>
+                        window.open(nextInterview.meet_url, "_blank")
+                      }
+                    >
+                      面接に参加
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <p className="text-muted-foreground">
+                  まだ面接は予約されていません。
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Booking History */}
+        <section>
+          <h3 className="text-lg font-semibold mb-3">予約履歴</h3>
+
+          {bookings.length === 0 ? (
+            <p className="text-muted-foreground">
+              予約履歴はまだありません。
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {bookings.map((b) => (
+                <Card key={b.id}>
+                  <CardContent className="py-4 flex justify-between items-center">
+                    <div>
+                      <p className="font-medium">
+                        {format(
+                          new Date(b.scheduled_at),
+                          "yyyy/MM/dd HH:mm"
+                        )}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        面接官ID: {b.interviewer_id}
+                      </p>
+                    </div>
+                    <Badge>{b.status}</Badge>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <Separator />
+
+        {/* Interviewer Search */}
+        <section className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">面接官を探す</h3>
+            <p className="text-muted-foreground text-sm">
+              条件に合う面接官を見つけて予約しましょう
+            </p>
+          </div>
+
+          <Button
+            className="bg-emerald-600 hover:bg-emerald-700"
             onClick={() => router.push("/interviewer/search")}
           >
-            詳細検索
-          </button>
-        </div>
-
-        {interviewers.map((i) => (
-          <div
-            key={i.id}
-            className="p-4 border rounded mb-3 cursor-pointer hover:bg-gray-100"
-            onClick={() => router.push(`/interviewer/${i.id}/booking`)}
-          >
-            <p><strong>{i.name}</strong></p>
-            <p>スキル: {i.skill}</p>
-            <p>時給: {i.hourly_rate}円</p>
-          </div>
-        ))}
-      </section>
+            面接官を探す
+          </Button>
+        </section>
+      </main>
     </div>
   );
 }

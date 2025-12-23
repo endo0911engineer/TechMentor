@@ -17,7 +17,7 @@ class Interview(Base):
     id = Column(Integer, primary_key=True, index=True)
     
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
-    interviewer_id = Column(Integer, ForeignKey("interviewers.id", ondelete="CASCADE"))
+    interviewer_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
 
     scheduled_at = Column(TIMESTAMP, nullable=False)
     duration_min = Column(Integer, nullable=False)
@@ -43,12 +43,14 @@ class Interview(Base):
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 
     user = relationship("User", foreign_keys=[user_id], backref="interviews_as_user")
-    interviewer = relationship("Interviewer", foreign_keys=[interviewer_id], backref="interviews_as_interviewer")
+    interviewer = relationship("User", foreign_keys=[interviewer_id], backref="interviews_as_interviewer")
 
     canceled_by = relationship(
         "User",
         foreign_keys=[canceled_by_user_id]
     )
+
+    reward = relationship("Reward", back_populates="interview", uselist=False, cascade="all, delete-orphan")
 
     def can_be_cancelled(self) -> bool:
         return self.scheduled_at >= datetime.utcnow() + timedelta(hours=24)

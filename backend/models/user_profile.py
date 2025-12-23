@@ -7,21 +7,21 @@ class UserProfile(Base):
     __tablename__ = "user_profiles"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
 
-    experience_years = Column(Integer, nullable=False)
+    experience_years = Column(Integer, nullable=True)
 
     english_level = Column(
         Enum("none", "basic", "business", "fluent", name="english_level"),
-        nullable=False
+        nullable=True,
     )
 
     target_level = Column(
         Enum("junior", "mid", "senior", "staff", "principal", name="target_level"),
-        nullable=False
+        nullable=True,
     )
 
-    interview_weaknesses = Column(Text)
+    interview_weaknesses = Column(Text, nullable=True)
 
-    user = relationship("User", back_populates="profile")
-    skills = relationship("UserSkill", back_populates="profile")
+    user = relationship("User", back_populates="user_profile")
+    skills = relationship("UserSkill", back_populates="profile", cascade="all, delete-orphan")

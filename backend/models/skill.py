@@ -12,7 +12,9 @@ class Skill(Base):
 class UserSkill(Base):
     __tablename__ = "user_skills"
 
-    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    id = Column(Integer, primary_key=True)
+    profile_id = Column(Integer, ForeignKey("user_profiles.id"))
+
     skill_id = Column(Integer, ForeignKey("skills.id"), primary_key=True)
 
     level = Column(

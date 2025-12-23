@@ -1,5 +1,5 @@
 # app/api/v1/auth.py
-from fastapi import APIRouter, Depends, HTTPException, status, Form
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta, datetime, timezone
@@ -9,6 +9,8 @@ from backend.crud import user as crud_user
 from backend.crud import interviewer_profile as crud_interviewer
 from backend.core.database import get_db
 from backend.schemas.token import TokenWithRefresh
+from backend.api.deps import get_current_user_from_cookie
+from backend.models.user import User
 
 router = APIRouter()
 
@@ -81,3 +83,12 @@ def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
         refresh_expires_at=datetime.now(timezone.utc) + refresh_expires,
         role=user.role
     )
+
+@router.get("/role")
+def get_user_role(
+    current_user: User = Depends(get_current_user_from_cookie),
+):
+    return {
+        "role": current_user.role,
+        "is_profile_completed": current_user.is_profile_completed,
+    }

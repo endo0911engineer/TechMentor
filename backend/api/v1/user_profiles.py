@@ -8,33 +8,60 @@ from backend.schemas.user_profile import (
 )
 from backend.api.deps import get_db, get_current_user
 from backend.crud import user_profile as crud
+from backend.models.user import User
 
 router = APIRouter()
 
-# ユーザプロフィールの作成
-@router.post("/", response_model=UserProfileResponse)
-def create_profile(
-    profile_in: UserProfileCreate,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user),
-):
-    if current_user.profile:
-        raise HTTPException(400, "Profile already exists")
-
-    return crud.create(db, user_id=current_user.id, profile_in=profile_in)
-
-# ユーザープロフィールの取得
-@router.get("/me", response_model=UserProfileResponse)
+@router.get("", response_model=UserProfileResponse | None)
 def read_profile(
-    current_user = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
-    return current_user.profile
+    return current_user.user_profile
 
-# ユーザープロフィールの更新
-@router.patch("/me", response_model=UserProfileResponse)
-def update_profile(
-    profile_in: UserProfileUpdate,
+@router.put("", response_model=UserProfileResponse)
+def upsert_profile(
+    profile_in: UserProfileCreate | UserProfileUpdate,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
-    return crud.update(db, current_user.profile, profile_in)
+    if current_user.user_profile:
+        profile = crud.update(
+            db=db,
+            profile=current_user.user_profile,
+            profile_in=profile_in,
+        )
+    else:
+        profile = crud.create(
+            db=db,
+            user_id=current_user.id,
+            profile_in=profile_in,
+        )
+
+    return profile
+
+
+@router.post("/complete")
+def complete_profile(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    profile = current_user.user_profile
+    if not profile:
+        raise HTTPException(status_code=400, detail="Profile not found")
+
+    # 完了条件チェック（例）
+    if not all([
+        profile.experience_years is not None,
+        profile.english_level is not None,
+        profile.target_level is not None,
+        len(profile.skills) > 0,
+    ]):
+        raise HTTPException(
+            status_code=400,
+            detail="Profile is not complete",
+        )
+
+    current_user.is_profile_completed = True
+    db.commit()
+
+    return {"message": "Profile completed"}
