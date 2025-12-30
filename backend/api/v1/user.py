@@ -1,5 +1,5 @@
 # app/api/v1/users.py
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from datetime import timedelta, datetime, timezone
 from typing import List
@@ -14,7 +14,10 @@ router = APIRouter()
 
 # 認証不要：ユーザー作成
 @router.post("/register", response_model=TokenWithRefresh, status_code=status.HTTP_201_CREATED)
-def create_user(user_in: UserCreate, db: Session = Depends(get_db)):
+def create_user(response: Response, 
+                user_in: UserCreate, 
+                db: Session = Depends(get_db)
+):
     existing_user = crud_user.get_user_by_email(db, user_in.email)
     if existing_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
@@ -34,14 +37,26 @@ def create_user(user_in: UserCreate, db: Session = Depends(get_db)):
         expires_delta=refresh_expires
     )
 
-    return TokenWithRefresh(
-        access_token=access_token,
-        token_type="bearer",
-        access_expires_at=datetime.now(timezone.utc) + access_expires,
-        refresh_token=refresh_token,
-        refresh_expires_at=datetime.now(timezone.utc) + refresh_expires,
-        role=user.role
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,   # JSからアクセス不可にする（重要）
+        secure=False,    # 開発環境(http)ならFalse、本番(https)はTrue
+        samesite="lax",  # CSRF対策
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
+
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+    )
+
+    return {"message": "Successfully registered", "role": user.role}
+
 
 
 # 認証不要（公開一覧） — 開発中は制限可能

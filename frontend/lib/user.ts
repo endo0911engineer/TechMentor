@@ -13,7 +13,6 @@ export async function register(name: string, email: string, password: string) {
     body: JSON.stringify({ name, email, password }),
   });
 
-  localStorage.setItem("access_token", res.access_token);
   return res;
 }
 

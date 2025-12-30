@@ -2,7 +2,7 @@
 from sqlalchemy.orm import Session
 
 from backend.models.user_profile import UserProfile
-from backend.models.user_skill import UserSkill
+from backend.models.skill import UserSkill
 from backend.schemas.user_profile import (
     UserProfileCreate,
     UserProfileUpdate,

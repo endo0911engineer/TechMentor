@@ -1,5 +1,5 @@
 # app/api/v1/auth.py
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta, datetime, timezone
@@ -14,9 +14,11 @@ from backend.models.user import User
 
 router = APIRouter()
 
-@router.post("/token", response_model=TokenWithRefresh)
+@router.post("/token")
 def login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+    response: Response,
+    form_data: OAuth2PasswordRequestForm = Depends(), 
+    db: Session = Depends(get_db)
 ):
     """
     OAuth2 Resource Owner Password Credentials フローを使用。
@@ -36,17 +38,31 @@ def login_for_access_token(
     access_token = create_access_token(sub=str(user.id), extra_claims={"role": user.role}, expires_delta=access_expires)
     refresh_token = create_refresh_token(sub=str(user.id), extra_claims={"role": user.role}, expires_delta=refresh_expires)
 
-    return TokenWithRefresh(
-        access_token=access_token,
-        token_type="bearer",
-        access_expires_at=datetime.now(timezone.utc) + access_expires,
-        refresh_token=refresh_token,
-        refresh_expires_at=datetime.now(timezone.utc) + refresh_expires,
-        role=user.role
+    # Cookieにセット
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=False, # 開発環境ならFalse
+        samesite="lax",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+    )
+    
+    return {"message": "Logged in successfully", "role": user.role}
 
-@router.post("/token/refresh", response_model=TokenWithRefresh)
-def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
+@router.post("/token/refresh")
+def refresh_token(request: Request,
+                  response: Response,
+                  db: Session = Depends(get_db)
+):
     """
     リフレッシュトークンを検証して、新しいアクセストークンとリフレッシュトークンを発行
     """
@@ -75,14 +91,24 @@ def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
     new_access = create_access_token(sub=str(user.id), role=user.role, expires_delta=access_expires)
     new_refresh = create_refresh_token(sub=str(user.id), expires_delta=refresh_expires)
 
-    return TokenWithRefresh(
-        access_token=new_access,
-        token_type="bearer",
-        access_expires_at=datetime.now(timezone.utc) + access_expires,
-        refresh_token=new_refresh,
-        refresh_expires_at=datetime.now(timezone.utc) + refresh_expires,
-        role=user.role
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=False, # 開発環境ならFalse
+        samesite="lax",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+    )
+
+    return {"message": "Token refreshed"}
 
 @router.get("/role")
 def get_user_role(

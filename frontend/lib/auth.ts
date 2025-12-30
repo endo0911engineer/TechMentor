@@ -13,7 +13,7 @@ export async function login(email: string, password: string) {
   });
 }
 
-export function logout() {
+export async function logout() {
   await apiClient("/api/auth/logout", {
     method: "POST",
   });
