@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from backend.api.deps import get_db, get_current_user, get_current_interviewer, get_current_admin
+from backend.api.deps import get_db, get_current_user_from_cookie
 from backend.schemas.reward import RewardResponse
 from backend.crud import reward as crud_reward
 
@@ -13,7 +13,7 @@ router = APIRouter()
 @router.get("/rewards/my", response_model=List[RewardResponse])
 def list_rewards(
     db: Session = Depends(get_db),
-    current_interviewer=Depends(get_current_interviewer)
+    current_interviewer=Depends(get_current_user_from_cookie)
 ):
     return crud_reward.get_rewards_by_interviewer(db, current_interviewer.id)
 
@@ -24,7 +24,7 @@ def list_rewards(
 def get_reward_detail(
     interview_id: int,
     db: Session = Depends(get_db),
-    current_interviewer=Depends(get_current_interviewer)
+    current_interviewer=Depends(get_current_user_from_cookie)
 ):
     reward = crud_reward.get_reward_by_interview(db, interview_id)
     if not reward or reward.interviewer_id != current_interviewer.id:

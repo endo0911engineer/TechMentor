@@ -1,7 +1,7 @@
 import { apiClient } from "./api";
 
 export async function login(email: string, password: string) {
-  const data = await apiClient("/api/auth/token", {
+  await apiClient("/api/auth/token", {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",

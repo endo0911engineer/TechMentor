@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { updateMyRole } from "@/lib/api/auth"; // role更新API
+import { updateMyRole } from "@/lib/auth"; // role更新API
 import { useAuth } from "@/hooks/useAuth";
 
 export default function SelectRolePage() {
@@ -25,7 +25,7 @@ export default function SelectRolePage() {
       await refreshUser(); // user情報を再取得
 
       // ロール確定後はプロフィール登録へ
-      router.push("/profile/setup");
+      router.push("profile/");
     } catch (e) {
       console.error(e);
       alert("ロール設定に失敗しました");

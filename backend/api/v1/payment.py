@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from backend.api.deps import get_db, get_current_user
+from backend.api.deps import get_db, get_current_user_from_cookie
 from backend.schemas.payment import PaymentCreate, PaymentResponse, PaymentUpdate
 from backend.crud import payment as crud_payment
 
@@ -13,7 +13,7 @@ router = APIRouter()
 def create_payment(
     payment_in: PaymentCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user_from_cookie)
 ):
     return crud_payment.create_payment(
         db=db,
@@ -28,7 +28,7 @@ def create_payment(
 def get_payment_status(
     interview_id: int,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user_from_cookie)
 ):
     payment = crud_payment.get_payment_by_interview(db, interview_id)
 

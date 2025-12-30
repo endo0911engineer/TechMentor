@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from backend.api.deps import get_db, get_current_user, get_current_interviewer
+from backend.api.deps import get_db, get_current_user_from_cookie
 from backend.schemas.feedback import FeedbackCreate, FeedbackResponse, FeedbackUpdate
 from backend.crud import feedback as crud_feedback
 
@@ -14,7 +14,7 @@ router = APIRouter()
 def create_feedback(
     feedback_in: FeedbackCreate,
     db: Session = Depends(get_db),
-    current_interviewer=Depends(get_current_interviewer)
+    current_interviewer=Depends(get_current_user_from_cookie)
 ):
     return crud_feedback.create_feedback(
         db=db,
@@ -29,7 +29,7 @@ def create_feedback(
 @router.get("/my", response_model=List[FeedbackResponse])
 def list_my_feedbacks(
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user_from_cookie)
 ):
     return crud_feedback.get_feedbacks_by_user(db, current_user.id)
 
@@ -40,7 +40,7 @@ def list_my_feedbacks(
 def get_feedback_detail(
     feedback_id: int,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user_from_cookie)
 ):
     feedback = crud_feedback.get_feedback(db, feedback_id)
     if not feedback:
@@ -61,7 +61,7 @@ def update_feedback(
     feedback_id: int,
     feedback_in: FeedbackUpdate,
     db: Session = Depends(get_db),
-    current_interviewer=Depends(get_current_interviewer)
+    current_interviewer=Depends(get_current_user_from_cookie)
 ):
     feedback = crud_feedback.get_feedback(db, feedback_id)
     if not feedback or feedback.interviewer_id != current_interviewer.id:
@@ -75,7 +75,7 @@ def update_feedback(
 def delete_feedback(
     feedback_id: int,
     db: Session = Depends(get_db),
-    current_interviewer=Depends(get_current_interviewer)
+    current_interviewer=Depends(get_current_user_from_cookie)
 ):
     feedback = crud_feedback.get_feedback(db, feedback_id)
     if not feedback or feedback.interviewer_id != current_interviewer.id:

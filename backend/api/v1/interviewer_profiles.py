@@ -6,7 +6,7 @@ from backend.schemas.interviewer import (
     InterviewerProfileUpdate,
     InterviewerProfileResponse,
 )
-from backend.api.deps import get_db, get_current_user
+from backend.api.deps import get_db, get_current_user_from_cookie
 from backend.crud import interviewer_profile as crud
 
 router = APIRouter()
@@ -16,7 +16,7 @@ router = APIRouter()
 def create_interviewer_profile(
     profile_in: InterviewerProfileCreate,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user),
+    current_user = Depends(get_current_user_from_cookie),
 ):
     if current_user.role != "interviewer":
         raise HTTPException(403, "Not an interviewer")
@@ -28,6 +28,6 @@ def create_interviewer_profile(
 def update_interviewer_profile(
     profile_in: InterviewerProfileUpdate,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user),
+    current_user = Depends(get_current_user_from_cookie),
 ):
     return crud.update(db, current_user.interviewer_profile, profile_in)

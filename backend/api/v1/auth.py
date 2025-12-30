@@ -2,15 +2,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from datetime import timedelta, datetime, timezone
+from datetime import timedelta
 from backend.core.config import settings
 from backend.core.security import verify_password, create_access_token, create_refresh_token, decode_token
 from backend.crud import user as crud_user
 from backend.crud import interviewer_profile as crud_interviewer
 from backend.core.database import get_db
-from backend.schemas.token import TokenWithRefresh
 from backend.api.deps import get_current_user_from_cookie
 from backend.models.user import User
+from backend.schemas.user import RoleUpdate
 
 router = APIRouter()
 
@@ -40,14 +40,6 @@ def login_for_access_token(
 
     # Cookieにセット
     response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,
-        secure=False, # 開発環境ならFalse
-        samesite="lax",
-        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
-    )
-    response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
@@ -68,6 +60,10 @@ def refresh_token(request: Request,
     """
     from jose import JWTError
 
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token missing")
+    
     try:
         payload = decode_token(refresh_token)
     except JWTError:
@@ -93,7 +89,7 @@ def refresh_token(request: Request,
 
     response.set_cookie(
         key="access_token",
-        value=access_token,
+        value=new_access,
         httponly=True,
         secure=False, # 開発環境ならFalse
         samesite="lax",
@@ -101,7 +97,7 @@ def refresh_token(request: Request,
     )
     response.set_cookie(
         key="refresh_token",
-        value=refresh_token,
+        value=new_refresh,
         httponly=True,
         secure=False,
         samesite="lax",
@@ -118,3 +114,38 @@ def get_user_role(
         "role": current_user.role,
         "is_profile_completed": current_user.is_profile_completed,
     }
+
+
+@router.put("/role") 
+def update_user_role(
+    role_update: RoleUpdate, 
+    response: Response,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_cookie) 
+):
+    # ロールのバリデーション（任意）
+    if role_update.role not in ["user", "interviewer"]:
+        raise HTTPException(status_code=400, detail="Invalid role")
+    
+    # ユーザーのロールを更新
+    current_user.role = role_update.role
+    db.commit()
+    db.refresh(current_user)
+
+    response.set_cookie(
+        key="role",
+        value=role_update.role,
+        httponly=False, # Middlewareで読み取るため、ここはTrue/Falseどちらでも良いが、JSで使うならFalse
+        max_age=60 * 60 * 24 * 7, # 7日間
+        samesite="lax",
+        secure=False, # ローカル開発時はFalse
+    )
+    
+    return {"message": "Role updated successfully", "role": current_user.role}
+
+
+@router.post("/logout")
+def logout(response: Response):
+    response.delete_cookie("access_token")
+    response.delete_cookie("refresh_token")
+    return {"message": "Logged out"}

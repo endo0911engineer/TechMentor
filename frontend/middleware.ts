@@ -24,7 +24,7 @@ export function middleware(req: NextRequest) {
     profileCompleted !== "true" &&
     !pathname.startsWith("/profile")
   ) {
-    return NextResponse.redirect(new URL("/profile/setup", req.url));
+    return NextResponse.redirect(new URL("/profile", req.url));
   }
 
   // userがinterviewer画面に行こうとした場合

@@ -6,7 +6,7 @@ from backend.schemas.experience import (
     ExperienceUpdate,
     ExperienceResponse,
 )
-from backend.api.deps import get_db, get_current_user
+from backend.api.deps import get_db, get_current_user_from_cookie
 from backend.crud import experience as crud
 
 router = APIRouter()
@@ -15,7 +15,7 @@ router = APIRouter()
 def create_experience(
     exp_in: ExperienceCreate,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user),
+    current_user = Depends(get_current_user_from_cookie),
 ):
     return crud.create(db, current_user.id, exp_in)
 
@@ -24,6 +24,6 @@ def update_experience(
     exp_id: int,
     exp_in: ExperienceUpdate,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user),
+    current_user = Depends(get_current_user_from_cookie),
 ):
     return crud.update(db, exp_id, current_user.id, exp_in)

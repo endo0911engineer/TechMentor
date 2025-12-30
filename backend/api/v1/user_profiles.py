@@ -6,7 +6,7 @@ from backend.schemas.user_profile import (
     UserProfileUpdate,
     UserProfileResponse,
 )
-from backend.api.deps import get_db, get_current_user
+from backend.api.deps import get_db, get_current_user_from_cookie
 from backend.crud import user_profile as crud
 from backend.models.user import User
 
@@ -14,7 +14,7 @@ router = APIRouter()
 
 @router.get("", response_model=UserProfileResponse | None)
 def read_profile(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_from_cookie),
 ):
     return current_user.user_profile
 
@@ -22,7 +22,7 @@ def read_profile(
 def upsert_profile(
     profile_in: UserProfileCreate | UserProfileUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_from_cookie),
 ):
     if current_user.user_profile:
         profile = crud.update(
@@ -43,7 +43,7 @@ def upsert_profile(
 @router.post("/complete")
 def complete_profile(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_from_cookie),
 ):
     profile = current_user.user_profile
     if not profile:

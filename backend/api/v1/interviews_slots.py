@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
-from backend.api.deps import get_db, get_current_interviewer
+from backend.api.deps import get_db, get_current_user_from_cookie
 from backend.schemas.interview_slot import (
     InterviewSlotCreate,
     InterviewSlotResponse,
@@ -21,7 +21,7 @@ router = APIRouter()
 def create_interview_slot(
     slot_in: InterviewSlotCreate,
     db: Session = Depends(get_db),
-    current_interviewer=Depends(get_current_interviewer),
+    current_interviewer=Depends(get_current_user_from_cookie),
 ):
     if slot_in.start_at >= slot_in.end_at:
         raise HTTPException(
@@ -43,7 +43,7 @@ def create_interview_slot(
 )
 def list_my_interview_slots(
     db: Session = Depends(get_db),
-    current_interviewer=Depends(get_current_interviewer),
+    current_interviewer=Depends(get_current_user_from_cookie),
 ):
     return crud_slot.get_slots_by_interviewer(
         db=db,
@@ -58,7 +58,7 @@ def list_my_interview_slots(
 def get_interview_slot(
     slot_id: int,
     db: Session = Depends(get_db),
-    current_interviewer=Depends(get_current_interviewer),
+    current_interviewer=Depends(get_current_user_from_cookie),
 ):
     slot = crud_slot.get_slot(db, slot_id)
     if not slot or slot.interviewer_id != current_interviewer.user_id:
@@ -73,7 +73,7 @@ def get_interview_slot(
 def delete_interview_slot(
     slot_id: int,
     db: Session = Depends(get_db),
-    current_interviewer=Depends(get_current_interviewer),
+    current_interviewer=Depends(get_current_user_from_cookie),
 ):
     slot = crud_slot.get_slot(db, slot_id)
     if not slot or slot.interviewer_id != current_interviewer.user_id:

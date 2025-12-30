@@ -3,11 +3,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
-from backend.api.deps import (
-    get_db,
-    get_current_user,
-    get_current_interviewer,
-)
 from backend.schemas.interview import (
     InterviewCreate,
     InterviewResponse,
@@ -16,7 +11,7 @@ from backend.schemas.interview import (
 from backend.crud import interview as crud_interview
 from backend.crud import interview_slot as crud_slot
 
-from backend.api.deps import get_db, get_current_user, get_current_interviewer
+from backend.api.deps import get_db, get_current_user_from_cookie
 from backend.schemas.interview import (
     InterviewCreate, 
     InterviewResponse
@@ -30,7 +25,7 @@ router = APIRouter()
 def create_interview(
     interview_in: InterviewCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_user_from_cookie),
 ):
     # slot を取得
     slot = crud_slot.get_slot(db, interview_in.slot_id)
@@ -49,7 +44,7 @@ def create_interview(
 @router.get("/", response_model=List[InterviewResponse])
 def list_my_interviews(
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_user_from_cookie),
 ):
     return crud_interview.get_by_user(db, current_user.id)
 
@@ -58,7 +53,7 @@ def list_my_interviews(
 def get_interview(
     interview_id: int,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_user_from_cookie),
 ):
     interview = crud_interview.get(db, interview_id)
 
@@ -78,7 +73,7 @@ def update_status(
     interview_id: int,
     status_in: InterviewStatusUpdate,
     db: Session = Depends(get_db),
-    current_interviewer=Depends(get_current_interviewer),
+    current_interviewer=Depends(get_current_user_from_cookie),
 ):
     interview = crud_interview.get(db, interview_id)
     if not interview:
@@ -99,7 +94,7 @@ def update_status(
 def cancel_interview(
     interview_id: int,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_user_from_cookie),
 ):
     interview = crud_interview.get(db, interview_id)
 

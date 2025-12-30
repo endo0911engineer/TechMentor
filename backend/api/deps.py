@@ -34,30 +34,6 @@ def get_current_user_from_cookie(
     return get_current_user_from_token(token, db)
 
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    payload = decode_access_token(token)
-    sub = payload.get("sub")
-    if sub is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token: missing sub")
-   
-    try:
-        user_id = int(sub)
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token subject format")
-
-    user = crud_user.get_user(db, user_id)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
-    return user
-
-def get_current_interviewer(current_user = Depends(get_current_user), db: Session = Depends(get_db)):
-    interviewer = crud_interviewer.get_interviewer_by_user_id(db, user_id=current_user.id)
-    
-    if not interviewer:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Interviewer not found")
-    
-    return interviewer
-
 def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     """
     JWT の sub クレームに admin_id を含めている前提 (例: "admin:<id>")。

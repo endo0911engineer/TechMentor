@@ -5,15 +5,14 @@ from datetime import timedelta, datetime, timezone
 from typing import List
 from backend.schemas.user import UserCreate, UserResponse
 from backend.crud import user as crud_user
-from backend.api.deps import get_db, get_current_user
+from backend.api.deps import get_db, get_current_user_from_cookie
 from backend.core.config import settings
-from backend.schemas.token import TokenWithRefresh
 from backend.core.security import create_access_token, create_refresh_token
 
 router = APIRouter()
 
 # 認証不要：ユーザー作成
-@router.post("/register", response_model=TokenWithRefresh, status_code=status.HTTP_201_CREATED)
+@router.post("/register", status_code=status.HTTP_201_CREATED)
 def create_user(response: Response, 
                 user_in: UserCreate, 
                 db: Session = Depends(get_db)
@@ -58,11 +57,16 @@ def create_user(response: Response,
     return {"message": "Successfully registered", "role": user.role}
 
 
-
 # 認証不要（公開一覧） — 開発中は制限可能
 @router.get("/", response_model=List[UserResponse])
 def list_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return crud_user.get_users(db, skip=skip, limit=limit)
+
+
+@router.get("/me", response_model=UserResponse)
+def read_me(current_user = Depends(get_current_user_from_cookie)):
+    return current_user
+
 
 # 認証不要（ID指定で参照） — ただし個人情報は注意
 @router.get("/{user_id}", response_model=UserResponse)
@@ -71,7 +75,3 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
     if not db_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return db_user
-
-@router.get("/me", response_model=UserResponse)
-def read_me(current_user = Depends(get_current_user)):
-    return current_user
