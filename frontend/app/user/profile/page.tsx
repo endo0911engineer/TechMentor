@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateProfile, createProfile } from "@/lib/profile";
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, Check } from 'lucide-react'
+import { ArrowLeft, Save, Check } from 'lucide-react'
 import Link from 'next/link'
 
 export default function ProfilePage() {

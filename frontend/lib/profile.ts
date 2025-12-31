@@ -24,15 +24,15 @@ export async function createProfile(data: Partial<UserProfile>) {
 }
 
 export async function updateProfile(data: Partial<UserProfile>) {
-  return apiClient("/api/profile/me", {
-    method: "PATCH",
+  return apiClient("/api/user-profile/", {
+    method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
 }
 
 export async function completeProfile() {
-  return apiClient("/api/profile/complete", {
+  return apiClient("/api/user-profile/complete", {
     method: "POST",
   });
 }

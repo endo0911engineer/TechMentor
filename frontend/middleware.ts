@@ -27,6 +27,18 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/profile", req.url));
   }
 
+  // 3. プロフィール未完了時のガード
+  // すでに /profile にいる場合はリダイレクトしないように明示的に除外
+  if (profileCompleted !== "true" && !pathname.startsWith("/profile")) {
+    return NextResponse.redirect(new URL("/profile", req.url));
+  }
+
+  // 4. プロフィール完了済みで、再度 /profile にアクセスしようとした場合
+  // (セットアップ画面に戻らせないためのガード。必要であれば有効化)
+  if (profileCompleted === "true" && pathname === "/profile") {
+     return NextResponse.redirect(new URL("/", req.url));
+  }
+
   // userがinterviewer画面に行こうとした場合
   if (role === "user" && pathname.startsWith("/interviewer")) {
     return NextResponse.redirect(new URL("/", req.url));

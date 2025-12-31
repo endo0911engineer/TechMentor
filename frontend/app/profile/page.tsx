@@ -5,18 +5,18 @@ import { useRouter } from "next/navigation";
 import { updateProfile } from "@/lib/profile";
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, Check } from 'lucide-react'
+import { ArrowLeft, Save, Check } from 'lucide-react'
 import Link from 'next/link'
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState({
     role: "" as "user" | "interviewer" | "",
     skills: [] as string[], 
-    experience: "",
+    experience_years: "",
     targetLevel: "",
     englishLevel: "",
   });
@@ -85,20 +85,7 @@ export default function ProfilePage() {
           <div className="rounded-2xl border border-slate-700/50 bg-slate-800/50 p-8 sm:p-12 backdrop-blur">
           <h2 className="text-2xl font-bold mb-2">基本情報を入力してください</h2>
           <p className="mb-6 text-slate-400">途中保存できます。あとで続きから再開できます。</p>
-            {/* Role */}
-            <div className="space-y-2">
-              <Label>ロール *</Label>
-              <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v as any })}>
-                <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white h-11">
-                  <SelectValue placeholder="選択してください" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-600">
-                  <SelectItem value="user">ユーザー（面接を受けたい）</SelectItem>
-                  <SelectItem value="interviewer">面接官（支援したい）</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
+           
             {/* Skills */}
             <div className="space-y-2">
               <Label>スキル *</Label>
@@ -194,6 +181,7 @@ export default function ProfilePage() {
           </div>
       </div>
     </div>
+  </div>
   </div>
  )
 }

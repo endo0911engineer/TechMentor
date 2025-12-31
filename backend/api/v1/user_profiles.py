@@ -1,5 +1,5 @@
 # app/api/v1/user_profile.py
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 from backend.schemas.user_profile import (
     UserProfileCreate,
@@ -42,6 +42,7 @@ def upsert_profile(
 
 @router.post("/complete")
 def complete_profile(
+    response: Response,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_from_cookie),
 ):
@@ -63,5 +64,13 @@ def complete_profile(
 
     current_user.is_profile_completed = True
     db.commit()
+
+    response.set_cookie(
+        key="is_profile_completed",
+        value="true",
+        path="/",
+        samesite="lax",
+        secure=False # 開発環境ならFalse
+    )
 
     return {"message": "Profile completed"}
