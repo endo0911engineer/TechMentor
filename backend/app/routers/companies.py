@@ -23,10 +23,28 @@ def create_company(data: CompanyCreate, db: Session = Depends(get_db)):
     return company
 
 
+
+@router.get("/tech-stacks", response_model=List[str])
+def list_tech_stacks(db: Session = Depends(get_db)):
+    rows = (
+        db.query(SalarySubmission.tech_stack)
+        .filter(SalarySubmission.is_approved == True, SalarySubmission.tech_stack.isnot(None))
+        .all()
+    )
+    stacks = set()
+    for (ts,) in rows:
+        for t in ts.split(","):
+            t = t.strip()
+            if t:
+                stacks.add(t)
+    return sorted(stacks)
+
+
 @router.get("", response_model=List[CompanyRead])
 def list_companies(
     search: Optional[str] = Query(None),
     industry: Optional[str] = Query(None),
+    tech_stack: Optional[str] = Query(None),
     skip: int = 0,
     limit: int = 50,
     db: Session = Depends(get_db),
@@ -36,6 +54,15 @@ def list_companies(
         query = query.filter(Company.name.ilike(f"%{search}%"))
     if industry:
         query = query.filter(Company.industry == industry)
+    if tech_stack:
+        from sqlalchemy import exists
+        sub = (
+            exists()
+            .where(SalarySubmission.company_id == Company.id)
+            .where(SalarySubmission.is_approved == True)
+            .where(SalarySubmission.tech_stack.ilike(f"%{tech_stack}%"))
+        )
+        query = query.filter(sub)
     return query.offset(skip).limit(limit).all()
 
 

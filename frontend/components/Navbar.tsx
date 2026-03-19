@@ -14,14 +14,14 @@ export default function Navbar() {
           <Link href="/ranking" className="hover:text-blue-600 transition-colors">
             年収ランキング
           </Link>
-          <Link href="/articles" className="hover:text-blue-600 transition-colors">
-            記事
+          <Link href="/interviews" className="hover:text-blue-600 transition-colors">
+            面接体験
           </Link>
           <Link
             href="/submit"
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            情報を投稿
+            体験をシェア
           </Link>
         </div>
       </div>

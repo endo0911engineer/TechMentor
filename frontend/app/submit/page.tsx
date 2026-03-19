@@ -51,6 +51,23 @@ const TECH_STACK_OPTIONS = [
   "PostgreSQL", "MySQL", "MongoDB", "Redis",
 ];
 
+const EXPERIENCE_OPTIONS = [
+  { label: "1年未満", value: 0 },
+  { label: "1年", value: 1 },
+  { label: "2年", value: 2 },
+  { label: "3年", value: 3 },
+  { label: "4年", value: 4 },
+  { label: "5年", value: 5 },
+  { label: "6年", value: 6 },
+  { label: "7年", value: 7 },
+  { label: "8年", value: 8 },
+  { label: "9年", value: 9 },
+  { label: "10年", value: 10 },
+  { label: "12年", value: 12 },
+  { label: "15年", value: 15 },
+  { label: "20年以上", value: 20 },
+];
+
 const LOCATION_OPTIONS = [
   "東京",
   "神奈川",
@@ -339,16 +356,17 @@ function SubmitForm() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>経験年数 <span className="text-red-500">*</span></label>
-              <input
+              <select
                 required
-                type="number"
-                min="0"
-                max="50"
-                placeholder="例: 5"
                 value={salaryForm.years_of_experience}
                 onChange={(e) => setSalaryForm({ ...salaryForm, years_of_experience: e.target.value })}
                 className={inputClass}
-              />
+              >
+                <option value="">選択してください</option>
+                {EXPERIENCE_OPTIONS.map((o) => (
+                  <option key={o.value} value={String(o.value)}>{o.label}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className={labelClass}>年収合計（万円）<span className="text-red-500">*</span></label>

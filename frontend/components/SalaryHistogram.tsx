@@ -45,17 +45,6 @@ export default function SalaryHistogram({ salaries, median, avg }: Props) {
   const medianX = Math.min(Math.max(xForSalary(median), padL), W - padR);
   const avgX = Math.min(Math.max(xForSalary(avg), padL), W - padR);
 
-  // Label anchor: put label on the less-crowded side
-  const medianAnchor = medianX > W * 0.65 ? "end" : "start";
-  const medianLabelX = medianAnchor === "end" ? medianX - 5 : medianX + 5;
-
-  const avgAnchor = avgX > W * 0.65 ? "end" : "start";
-  const avgLabelX = avgAnchor === "end" ? avgX - 5 : avgX + 5;
-
-  // If labels are close, separate vertically
-  const labelsClose = Math.abs(medianX - avgX) < 80;
-  const medianLabelY = padT - 8;
-  const avgLabelY = labelsClose ? padT - 20 : padT - 8;
 
   return (
     <div className="mt-6">
@@ -116,16 +105,6 @@ export default function SalaryHistogram({ salaries, median, avg }: Props) {
           strokeDasharray="5 3"
           opacity="0.6"
         />
-        <text
-          x={avgLabelX}
-          y={avgLabelY}
-          textAnchor={avgAnchor}
-          fontSize="10"
-          fill="#3b82f6"
-          opacity="0.8"
-        >
-          平均 {avg}万
-        </text>
 
         {/* Median line — solid, green, prominent */}
         <line
@@ -136,16 +115,6 @@ export default function SalaryHistogram({ salaries, median, avg }: Props) {
           stroke="#16a34a"
           strokeWidth="2.5"
         />
-        <text
-          x={medianLabelX}
-          y={medianLabelY}
-          textAnchor={medianAnchor}
-          fontSize="11"
-          fill="#16a34a"
-          fontWeight="700"
-        >
-          中央値 {median}万
-        </text>
 
         {/* X axis */}
         <line

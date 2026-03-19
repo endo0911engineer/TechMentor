@@ -1,6 +1,7 @@
 import { api } from "@/lib/api";
 import SalaryStats from "@/components/SalaryStats";
 import SalaryHistogram from "@/components/SalaryHistogram";
+import SalaryBreakdownCharts from "@/components/SalaryBreakdownCharts";
 import { SalaryCard, InterviewCard } from "@/components/SubmissionCard";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -55,7 +56,7 @@ export default async function CompanyDetailPage({ params }: Props) {
             href={`/submit?company_id=${id}`}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium"
           >
-            情報を投稿
+            体験をシェア
           </Link>
         </div>
         {techStack.length > 0 && (
@@ -86,6 +87,7 @@ export default async function CompanyDetailPage({ params }: Props) {
                 avg={stats.avg_salary}
               />
             )}
+          <SalaryBreakdownCharts submissions={salarySubmissions} />
         </div>
       </section>
 

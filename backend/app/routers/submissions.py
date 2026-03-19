@@ -1,12 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from typing import List
 from app.database import get_db
 from app.models.submission import SalarySubmission, InterviewSubmission
+from app.models.company import Company
 from app.schemas.submission import (
     SalarySubmissionCreate,
     SalarySubmissionRead,
     InterviewSubmissionCreate,
     InterviewSubmissionRead,
+    InterviewSubmissionWithCompany,
 )
 
 router = APIRouter()
@@ -32,6 +35,21 @@ def create_interview_submission(
     db.commit()
     db.refresh(submission)
     return submission
+
+
+@router.get("/interview-submissions", response_model=List[InterviewSubmissionWithCompany])
+def list_interview_submissions(db: Session = Depends(get_db)):
+    rows = (
+        db.query(InterviewSubmission, Company.name)
+        .join(Company, InterviewSubmission.company_id == Company.id)
+        .filter(InterviewSubmission.is_approved == True)
+        .order_by(InterviewSubmission.created_at.desc())
+        .all()
+    )
+    return [
+        InterviewSubmissionWithCompany(**sub.__dict__, company_name=name)
+        for sub, name in rows
+    ]
 
 
 @router.get("/interview-submissions/{submission_id}", response_model=InterviewSubmissionRead)

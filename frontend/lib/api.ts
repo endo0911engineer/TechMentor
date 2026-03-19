@@ -90,20 +90,24 @@ export const api = {
       method: "POST",
       body: JSON.stringify(data),
     }),
-  getCompanies: (params?: { search?: string; industry?: string }) => {
+  getCompanies: (params?: { search?: string; industry?: string; tech_stack?: string }) => {
     const qs = new URLSearchParams();
     if (params?.search) qs.set("search", params.search);
     if (params?.industry) qs.set("industry", params.industry);
+    if (params?.tech_stack) qs.set("tech_stack", params.tech_stack);
     const query = qs.toString() ? `?${qs}` : "";
     return apiFetch<Company[]>(`/companies${query}`);
   },
   getCompany: (id: number) => apiFetch<Company>(`/companies/${id}`),
   getCompanyStats: (id: number) => apiFetch<CompanyStats>(`/companies/${id}/stats`),
-  getCompaniesWithStats: async (params?: { search?: string }): Promise<CompanyWithStats[]> => {
+  getCompaniesWithStats: async (params?: { search?: string; industry?: string; tech_stack?: string }): Promise<CompanyWithStats[]> => {
     const companies = await api.getCompanies(params);
-    const stats = await Promise.all(companies.map((c) => api.getCompanyStats(c.id)));
+    const statsResults = await Promise.allSettled(companies.map((c) => api.getCompanyStats(c.id)));
     return companies
-      .map((c, i) => ({ ...c, stats: stats[i] }))
+      .map((c, i) => ({
+        ...c,
+        stats: statsResults[i].status === "fulfilled" ? statsResults[i].value : { submission_count: 0 },
+      }))
       .filter((c) => c.stats.submission_count > 0);
   },
   getSalarySubmissions: (id: number) =>
@@ -124,4 +128,8 @@ export const api = {
     apiFetch<InterviewSubmission>(`/interview-submissions/${id}`),
   getArticles: () => apiFetch<Article[]>("/articles"),
   getArticle: (slug: string) => apiFetch<Article>(`/articles/${slug}`),
+  getStats: () => apiFetch<{ company_count: number; salary_count: number; interview_count: number }>("/stats"),
+  getAllInterviews: () => apiFetch<(InterviewSubmission & { company_name: string })[]>("/interview-submissions"),
+  getIndustries: () => apiFetch<{ id: number; name: string }[]>("/industries"),
+  getTechStacks: () => apiFetch<string[]>("/companies/tech-stacks"),
 };

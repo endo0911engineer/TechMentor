@@ -19,10 +19,12 @@ class CompanyCreate(CompanyBase):
 class CompanyUpdate(BaseModel):
     name: Optional[str] = None
     industry: Optional[str] = None
+    description: Optional[str] = None
 
 
 class CompanyRead(CompanyBase):
     id: int
+    is_approved: bool = False
 
     model_config = {"from_attributes": True}
 

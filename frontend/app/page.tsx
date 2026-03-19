@@ -1,75 +1,99 @@
 import Link from "next/link";
-import { api, Company } from "@/lib/api";
-import CompanyCard from "@/components/CompanyCard";
+import { api } from "@/lib/api";
+import CompanyCarousel from "@/components/CompanyCarousel";
 
 export const revalidate = 60;
 
 export default async function HomePage() {
-  let companies: Company[] = [];
-  try {
-    companies = await api.getCompanies();
-  } catch {}
+  let stats = { company_count: 0, salary_count: 0, interview_count: 0 };
+  let featured: Awaited<ReturnType<typeof api.getCompaniesWithStats>> = [];
 
-  const featured = companies.slice(0, 6);
+  await Promise.allSettled([
+    api.getStats().then((s) => { stats = s; }),
+    api.getCompaniesWithStats().then((c) => { featured = c; }),
+  ]);
+
+  const topCompanies = [...featured]
+    .sort((a, b) => b.stats.submission_count - a.stats.submission_count)
+    .slice(0, 6);
 
   return (
     <div>
       {/* Hero */}
-      <section className="text-center py-16">
-        <h1 className="text-4xl font-bold text-gray-900 leading-tight">
-          日本のITエンジニア
-          <br />
-          <span className="text-blue-600">給与・面接データベース</span>
-        </h1>
-        <p className="mt-4 text-lg text-gray-500 max-w-xl mx-auto">
-          実際の体験談から、企業のリアルな年収・面接情報を知ろう
+      <section className="text-center py-16 pb-10">
+        <p className="text-xs font-semibold tracking-widest text-blue-500 uppercase mb-4">
+          Engineers, Know Your Worth
         </p>
-        <div className="mt-8 flex gap-4 justify-center">
+        <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 leading-tight">
+          その年収、技術に<br />見合っていますか？
+        </h1>
+        <p className="mt-4 text-lg text-gray-500 max-w-lg mx-auto leading-relaxed">
+          リアルな給与データと、技術選考の舞台裏。<br className="hidden sm:block" />
+          エンジニアが本音で語る、生の体験談。
+        </p>
+        <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
           <Link
             href="/companies"
-            className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition"
+            className="bg-blue-600 text-white px-7 py-3.5 rounded-xl font-bold hover:bg-blue-700 transition"
           >
-            企業を探す
+            気になる企業のデータを検索 →
           </Link>
           <Link
             href="/submit"
-            className="border-2 border-blue-600 text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition"
+            className="border-2 border-blue-600 text-blue-600 px-7 py-3.5 rounded-xl font-bold hover:bg-blue-50 transition"
           >
-            情報を投稿する
+            体験談を匿名でシェアする
           </Link>
         </div>
       </section>
 
       {/* Stats */}
-      <section className="grid grid-cols-3 gap-6 my-12">
+      <section className="grid grid-cols-3 gap-4 my-10">
         {[
-          { label: "登録企業数", value: `${companies.length}社` },
-          { label: "年収データ", value: "随時更新" },
-          { label: "面接体験談", value: "随時更新" },
+          { label: "掲載企業", value: stats.company_count, unit: "社" },
+          { label: "年収データ", value: stats.salary_count, unit: "件" },
+          { label: "面接体験談", value: stats.interview_count, unit: "件" },
         ].map((stat) => (
-          <div key={stat.label} className="bg-white rounded-xl p-6 text-center shadow-sm">
-            <p className="text-3xl font-bold text-blue-600">{stat.value}</p>
-            <p className="text-sm text-gray-500 mt-1">{stat.label}</p>
+          <div key={stat.label} className="bg-white rounded-2xl p-5 text-center shadow-sm border border-gray-100">
+            <p className="text-3xl font-extrabold text-blue-600 tabular-nums">
+              {stat.value.toLocaleString()}
+              <span className="text-lg font-bold ml-0.5">{stat.unit}</span>
+            </p>
+            <p className="text-xs text-gray-400 mt-1 font-medium">{stat.label}</p>
           </div>
         ))}
       </section>
 
-      {/* Featured companies */}
-      {featured.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">注目企業</h2>
-            <Link href="/companies" className="text-sm text-blue-600 hover:underline">
+      {/* Featured companies — メインコンテンツ */}
+      {topCompanies.length > 0 && (
+        <section className="my-10">
+          <div className="flex items-end justify-between mb-5">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">注目企業の年収データ</h2>
+              <p className="text-sm text-gray-400 mt-0.5">投稿数の多い企業をピックアップ</p>
+            </div>
+            <Link href="/companies" className="text-sm text-blue-600 hover:underline font-medium">
               すべて見る →
             </Link>
           </div>
-          <div className="grid md:grid-cols-2 gap-4">
-            {featured.map((c) => (
-              <CompanyCard key={c.id} company={c} />
-            ))}
-          </div>
+          <CompanyCarousel companies={topCompanies} />
         </section>
       )}
+
+      {/* Bottom CTA */}
+      <section className="my-10 border-t border-gray-100 pt-12 text-center">
+        <p className="text-xs font-semibold tracking-widest text-blue-500 uppercase mb-3">Share Your Experience</p>
+        <h2 className="text-2xl font-bold text-gray-900">あなたの体験が、誰かの決断を変える</h2>
+        <p className="mt-2 mb-8 text-gray-500 max-w-md mx-auto">
+          給与交渉・転職・面接対策。リアルなデータがエンジニアの選択肢を広げます。
+        </p>
+        <Link
+          href="/submit"
+          className="bg-blue-600 text-white px-8 py-3.5 rounded-xl font-bold hover:bg-blue-700 transition inline-block"
+        >
+          体験談を匿名でシェアする
+        </Link>
+      </section>
     </div>
   );
 }
