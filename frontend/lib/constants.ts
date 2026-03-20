@@ -15,6 +15,7 @@ export const JOB_TITLES = [
 ] as const;
 
 export const EXPERIENCE_OPTIONS = [
+  { label : "新卒・未経験", value: 0 },
   { label: "1年未満", value: 0 },
   { label: "1年", value: 1 },
   { label: "2年", value: 2 },
