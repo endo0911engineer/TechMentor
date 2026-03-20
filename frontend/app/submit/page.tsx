@@ -3,101 +3,19 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { api, Company, InterviewContent } from "@/lib/api";
+import {
+  JOB_TITLES,
+  EXPERIENCE_OPTIONS,
+  REMOTE_OPTIONS,
+  OVERTIME_OPTIONS,
+  TECH_STACK_OPTIONS,
+  LOCATION_OPTIONS,
+  RESULT_OPTIONS,
+  DIFFICULTY_OPTIONS,
+  INTERVIEW_CONTENT_KEYS,
+} from "@/lib/constants";
 
 const NEW_COMPANY_VALUE = "__new__";
-
-const JOB_TITLES = [
-  "バックエンドエンジニア",
-  "フロントエンドエンジニア",
-  "フルスタックエンジニア",
-  "モバイルエンジニア（iOS）",
-  "モバイルエンジニア（Android）",
-  "インフラ / SREエンジニア",
-  "データエンジニア",
-  "機械学習 / AIエンジニア",
-  "セキュリティエンジニア",
-  "QAエンジニア",
-  "プロダクトマネージャー",
-  "エンジニアリングマネージャー",
-  "その他",
-];
-
-const REMOTE_OPTIONS = [
-  "フルリモート",
-  "一部リモート（週3日以上）",
-  "一部リモート（週1〜2日）",
-  "出社のみ",
-];
-
-const OVERTIME_OPTIONS = [
-  "ほぼなし（月10時間未満）",
-  "少ない（月10〜20時間）",
-  "普通（月20〜40時間）",
-  "多い（月40〜60時間）",
-  "非常に多い（月60時間以上）",
-];
-
-const TECH_STACK_OPTIONS = [
-  // 言語
-  "TypeScript", "JavaScript", "Python", "Go", "Java", "Kotlin", "Swift",
-  "Ruby", "Rust", "C#", "C++", "PHP", "Scala",
-  // フロントエンド
-  "React", "Next.js", "Vue.js", "Nuxt.js", "Angular",
-  // バックエンド
-  "Node.js", "FastAPI", "Django", "Ruby on Rails", "Spring Boot", "Laravel",
-  // インフラ / クラウド
-  "AWS", "GCP", "Azure", "Docker", "Kubernetes", "Terraform",
-  // DB
-  "PostgreSQL", "MySQL", "MongoDB", "Redis",
-];
-
-const EXPERIENCE_OPTIONS = [
-  { label: "1年未満", value: 0 },
-  { label: "1年", value: 1 },
-  { label: "2年", value: 2 },
-  { label: "3年", value: 3 },
-  { label: "4年", value: 4 },
-  { label: "5年", value: 5 },
-  { label: "6年", value: 6 },
-  { label: "7年", value: 7 },
-  { label: "8年", value: 8 },
-  { label: "9年", value: 9 },
-  { label: "10年", value: 10 },
-  { label: "12年", value: 12 },
-  { label: "15年", value: 15 },
-  { label: "20年以上", value: 20 },
-];
-
-const LOCATION_OPTIONS = [
-  "東京",
-  "神奈川",
-  "大阪",
-  "愛知",
-  "福岡",
-  "北海道",
-  "宮城",
-  "広島",
-  "その他",
-];
-
-const RESULT_OPTIONS = ["合格", "不合格", "辞退", "選考中"];
-
-const DIFFICULTY_OPTIONS = [
-  "とても簡単",
-  "簡単",
-  "普通",
-  "難しい",
-  "とても難しい",
-];
-
-const INTERVIEW_CONTENT_KEYS: { key: keyof InterviewContent; label: string }[] = [
-  { key: "coding", label: "コーディング試験" },
-  { key: "system_design", label: "システムデザイン" },
-  { key: "behavioral", label: "行動面接（Behavioral）" },
-  { key: "case", label: "ケース面接" },
-  { key: "english", label: "英語面接" },
-  { key: "other", label: "その他" },
-];
 
 const defaultInterviewContent = (): InterviewContent => ({
   coding: { checked: false },
@@ -115,6 +33,7 @@ function SubmitForm() {
   const [tab, setTab] = useState<"salary" | "interview">("salary");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showConfirm, setShowConfirm] = useState<"salary" | "interview" | null>(null);
 
   const defaultCompanyId = searchParams.get("company_id") || "";
 
@@ -166,12 +85,17 @@ function SubmitForm() {
     return parseInt(selectedValue);
   };
 
-  const handleSalarySubmit = async (e: React.FormEvent) => {
+  const handleSalarySubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (salaryCompany === NEW_COMPANY_VALUE && !salaryNewName.trim()) {
       alert("企業名を入力してください");
       return;
     }
+    setShowConfirm("salary");
+  };
+
+  const doSalarySubmit = async () => {
+    setShowConfirm(null);
     setLoading(true);
     try {
       const companyId = await resolveCompanyId(salaryCompany, salaryNewName, salaryNewIndustry);
@@ -193,12 +117,22 @@ function SubmitForm() {
     }
   };
 
-  const handleInterviewSubmit = async (e: React.FormEvent) => {
+  const handleInterviewSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (interviewCompany === NEW_COMPANY_VALUE && !interviewNewName.trim()) {
       alert("企業名を入力してください");
       return;
     }
+    const hasContent = Object.values(interviewContent).some((v) => v.checked);
+    if (!hasContent) {
+      alert("面接内容を少なくとも1つ選択してください");
+      return;
+    }
+    setShowConfirm("interview");
+  };
+
+  const doInterviewSubmit = async () => {
+    setShowConfirm(null);
     setLoading(true);
     try {
       const companyId = await resolveCompanyId(interviewCompany, interviewNewName, interviewNewIndustry);
@@ -252,6 +186,23 @@ function SubmitForm() {
   const inputClass =
     "w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400";
   const labelClass = "block text-sm font-medium text-gray-700 mb-1";
+
+  const ConfirmRow = ({ label, value }: { label: string; value: string }) => (
+    <div className="flex gap-3 py-2 border-b border-gray-100 last:border-0">
+      <dt className="text-gray-500 shrink-0 w-28 text-sm">{label}</dt>
+      <dd className="text-gray-900 text-sm break-words">{value}</dd>
+    </div>
+  );
+
+  const salaryCompanyName =
+    salaryCompany === NEW_COMPANY_VALUE
+      ? salaryNewName
+      : companies.find((c) => String(c.id) === salaryCompany)?.name ?? "";
+
+  const interviewCompanyName =
+    interviewCompany === NEW_COMPANY_VALUE
+      ? interviewNewName
+      : companies.find((c) => String(c.id) === interviewCompany)?.name ?? "";
 
   const CompanySelector = ({
     value,
@@ -309,6 +260,61 @@ function SubmitForm() {
 
   return (
     <div className="max-w-lg mx-auto">
+      {/* 確認ポップアップ */}
+      {showConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[85vh] overflow-y-auto">
+            <div className="p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-1">投稿内容の確認</h2>
+              <p className="text-sm text-gray-500 mb-4">以下の内容で投稿してよろしいですか？</p>
+              <dl>
+                {showConfirm === "salary" && (
+                  <>
+                    <ConfirmRow label="企業" value={salaryCompanyName} />
+                    {salaryForm.job_title && <ConfirmRow label="職種" value={salaryForm.job_title} />}
+                    <ConfirmRow label="経験年数" value={`${salaryForm.years_of_experience}年`} />
+                    <ConfirmRow label="年収" value={`${salaryForm.salary}万円`} />
+                    {salaryForm.salary_breakdown && <ConfirmRow label="年収内訳" value={salaryForm.salary_breakdown} />}
+                    {salaryForm.location && <ConfirmRow label="勤務地" value={salaryForm.location} />}
+                    {salaryForm.remote_type && <ConfirmRow label="リモート" value={salaryForm.remote_type} />}
+                    {salaryForm.overtime_feeling && <ConfirmRow label="残業感" value={salaryForm.overtime_feeling} />}
+                    {selectedTechStack.length > 0 && <ConfirmRow label="技術スタック" value={selectedTechStack.join(", ")} />}
+                    {salaryForm.comment && <ConfirmRow label="コメント" value={salaryForm.comment} />}
+                  </>
+                )}
+                {showConfirm === "interview" && (
+                  <>
+                    <ConfirmRow label="企業" value={interviewCompanyName} />
+                    {interviewForm.job_title && <ConfirmRow label="職種" value={interviewForm.job_title} />}
+                    <ConfirmRow label="面接回数" value={`${interviewForm.interview_rounds}回`} />
+                    {interviewForm.result && <ConfirmRow label="結果" value={interviewForm.result} />}
+                    {interviewForm.difficulty && <ConfirmRow label="難易度" value={interviewForm.difficulty} />}
+                    {INTERVIEW_CONTENT_KEYS.filter(({ key }) => interviewContent[key].checked).map(({ key, label }) => (
+                      <ConfirmRow key={key} label={label} value={interviewContent[key].comment || "あり"} />
+                    ))}
+                  </>
+                )}
+              </dl>
+              <p className="text-xs text-gray-400 mt-4">投稿は匿名で送信されます。管理者確認後に公開されます。</p>
+              <div className="flex gap-3 mt-5">
+                <button
+                  onClick={() => setShowConfirm(null)}
+                  className="flex-1 border border-gray-300 text-gray-600 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50"
+                >
+                  修正する
+                </button>
+                <button
+                  onClick={showConfirm === "salary" ? doSalarySubmit : doInterviewSubmit}
+                  className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700"
+                >
+                  投稿する
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <h1 className="text-2xl font-bold text-gray-900 mb-2">情報を投稿する</h1>
       <p className="text-sm text-gray-500 mb-6">投稿は匿名で公開されます</p>
 
@@ -461,6 +467,7 @@ function SubmitForm() {
           >
             {loading ? "送信中..." : "投稿する"}
           </button>
+          <p className="text-center text-xs text-gray-400">投稿内容は管理者が確認した後に公開されます</p>
         </form>
       )}
 
@@ -568,6 +575,7 @@ function SubmitForm() {
           >
             {loading ? "送信中..." : "投稿する"}
           </button>
+          <p className="text-center text-xs text-gray-400">投稿内容は管理者が確認した後に公開されます</p>
         </form>
       )}
     </div>

@@ -1,72 +1,52 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import type { components } from "@/lib/generated";
+import Pagination from "@/components/Pagination";
+
+const ADMIN_PAGE_SIZE = 20;
+import {
+  REMOTE_OPTIONS,
+  OVERTIME_OPTIONS,
+  RESULT_OPTIONS,
+  DIFFICULTY_OPTIONS,
+  INTERVIEW_CONTENT_KEYS,
+} from "@/lib/constants";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-type Tab = "salary" | "interview" | "companies" | "industries" | "articles";
+type Tab = "salary" | "interview" | "companies" | "industries" | "articles" | "contacts";
+type Contact = components["schemas"]["ContactRead"];
 
-interface SalarySubmission {
-  id: number;
-  company_id: number;
-  company_name: string;
-  job_title?: string;
-  years_of_experience?: number;
-  salary?: number;
-  salary_breakdown?: string;
-  location?: string;
-  remote_type?: string;
-  overtime_feeling?: string;
-  tech_stack?: string;
-  comment?: string;
-  is_approved: boolean;
-  created_at: string;
-}
-
-interface InterviewSubmission {
-  id: number;
-  company_id: number;
-  company_name: string;
-  job_title?: string;
-  interview_rounds?: number;
-  result?: string;
-  difficulty?: string;
-  tags?: string;
-  interview_content?: string;
-  is_approved: boolean;
-  created_at: string;
-}
-
-interface Company {
-  id: number;
-  name: string;
-  industry?: string;
-  description?: string;
-  is_approved?: boolean;
-}
-
-interface Industry {
-  id: number;
-  name: string;
-}
-
-interface Article {
-  id: number;
-  title: string;
-  slug: string;
-  content?: string;
-  created_at: string;
-}
+// Types derived from generated OpenAPI schema
+type SalarySubmission = components["schemas"]["SalarySubmissionAdmin"];
+type InterviewSubmission = components["schemas"]["InterviewSubmissionAdmin"];
+type Company = components["schemas"]["CompanyRead"];
+type Industry = components["schemas"]["IndustryRead"];
+type Article = components["schemas"]["ArticleRead"];
 
 interface ConfirmState {
   message: string;
   onConfirm: () => void;
 }
 
-const REMOTE_OPTIONS = ["フルリモート", "一部リモート（週3日以上）", "一部リモート（週1〜2日）", "出社のみ"];
-const OVERTIME_OPTIONS = ["ほぼなし（月10時間未満）", "少ない（月10〜20時間）", "普通（月20〜40時間）", "多い（月40〜60時間）", "非常に多い（月60時間以上）"];
-const RESULT_OPTIONS = ["合格", "不合格", "辞退", "選考中"];
-const DIFFICULTY_OPTIONS = ["とても簡単", "簡単", "普通", "難しい", "とても難しい"];
+type InterviewContentMap = Record<string, { checked: boolean; comment: string }>;
+
+function parseInterviewContent(raw?: string | null): InterviewContentMap {
+  try {
+    const parsed = raw ? JSON.parse(raw) : {};
+    return Object.fromEntries(
+      INTERVIEW_CONTENT_KEYS.map(({ key }) => [
+        key,
+        { checked: !!parsed[key]?.checked, comment: parsed[key]?.comment ?? "" },
+      ])
+    );
+  } catch {
+    return Object.fromEntries(
+      INTERVIEW_CONTENT_KEYS.map(({ key }) => [key, { checked: false, comment: "" }])
+    );
+  }
+}
 
 function slugify(text: string): string {
   return text.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").slice(0, 80);
@@ -81,6 +61,7 @@ export default function AdminPage() {
   const [allCompanies, setAllCompanies] = useState<Company[]>([]);
   const [industries, setIndustries] = useState<Industry[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
@@ -88,15 +69,19 @@ export default function AdminPage() {
   // salary edit
   const [editingSalary, setEditingSalary] = useState<number | null>(null);
   const [salaryEditForm, setSalaryEditForm] = useState<Partial<SalarySubmission>>({});
+  const [salaryPage, setSalaryPage] = useState(1);
 
   // interview edit
   const [editingInterview, setEditingInterview] = useState<number | null>(null);
   const [interviewEditForm, setInterviewEditForm] = useState<Partial<InterviewSubmission>>({});
+  const [interviewContentEdit, setInterviewContentEdit] = useState<InterviewContentMap>({});
+  const [interviewPage, setInterviewPage] = useState(1);
 
   // company
   const [editingCompany, setEditingCompany] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ name: "", industry: "", description: "" });
   const [companySearch, setCompanySearch] = useState("");
+  const [companyPage, setCompanyPage] = useState(1);
 
   // industry
   const [newIndustryName, setNewIndustryName] = useState("");
@@ -120,7 +105,7 @@ export default function AdminPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [s, i, c, a] = await Promise.all([
+      const [s, i, c, a, ct] = await Promise.all([
         fetch(`${API_URL}/admin/salary-submissions`, { headers: headers() }).then((r) => {
           if (!r.ok) throw new Error("auth");
           return r.json();
@@ -128,11 +113,13 @@ export default function AdminPage() {
         fetch(`${API_URL}/admin/interview-submissions`, { headers: headers() }).then((r) => r.json()),
         fetch(`${API_URL}/admin/companies`, { headers: headers() }).then((r) => r.json()),
         fetch(`${API_URL}/admin/articles`, { headers: headers() }).then((r) => r.json()),
+        fetch(`${API_URL}/admin/contacts`, { headers: headers() }).then((r) => r.json()),
       ]);
       setSalarySubs(s);
       setInterviewSubs(i);
       setAllCompanies(c);
       setArticles(a);
+      setContacts(ct);
       setAuthed(true);
       sessionStorage.setItem("admin_key", key);
     } catch {
@@ -158,6 +145,11 @@ export default function AdminPage() {
     load();
   };
 
+  const unapproveSubmission = async (type: "salary" | "interview", id: number) => {
+    await fetch(`${API_URL}/admin/${type}-submissions/${id}/unapprove`, { method: "POST", headers: headers() });
+    load();
+  };
+
   const deleteSubmission = (type: "salary" | "interview", id: number) => {
     askConfirm("この投稿を削除しますか？この操作は取り消せません。", async () => {
       await fetch(`${API_URL}/admin/${type}-submissions/${id}`, { method: "DELETE", headers: headers() });
@@ -179,7 +171,10 @@ export default function AdminPage() {
     await fetch(`${API_URL}/admin/interview-submissions/${id}`, {
       method: "PATCH",
       headers: headers(),
-      body: JSON.stringify(interviewEditForm),
+      body: JSON.stringify({
+        ...interviewEditForm,
+        interview_content: JSON.stringify(interviewContentEdit),
+      }),
     });
     setEditingInterview(null);
     load();
@@ -239,6 +234,19 @@ export default function AdminPage() {
     askConfirm(`業種「${name}」を削除しますか？`, async () => {
       await fetch(`${API_URL}/industries/${id}`, { method: "DELETE", headers: headers() });
       loadIndustries();
+    });
+  };
+
+  // contacts
+  const resolveContact = async (id: number) => {
+    await fetch(`${API_URL}/admin/contacts/${id}/resolve`, { method: "POST", headers: headers() });
+    load();
+  };
+
+  const deleteContact = (id: number) => {
+    askConfirm("このお問い合わせを削除しますか？", async () => {
+      await fetch(`${API_URL}/admin/contacts/${id}`, { method: "DELETE", headers: headers() });
+      load();
     });
   };
 
@@ -307,6 +315,7 @@ export default function AdminPage() {
   const pendingCount = allCompanies.filter((c) => !c.is_approved).length;
   const pendingSalary = salarySubs.filter((s) => !s.is_approved).length;
   const pendingInterview = interviewSubs.filter((s) => !s.is_approved).length;
+  const pendingContacts = contacts.filter((c) => !c.is_resolved).length;
 
   const sortedCompanies = [...allCompanies]
     .filter((c) => !companySearch || c.name.includes(companySearch))
@@ -315,13 +324,34 @@ export default function AdminPage() {
       return a.is_approved ? 1 : -1;
     });
 
+  const pagedSalary = salarySubs.slice((salaryPage - 1) * ADMIN_PAGE_SIZE, salaryPage * ADMIN_PAGE_SIZE);
+  const salaryTotalPages = Math.ceil(salarySubs.length / ADMIN_PAGE_SIZE);
+  const pagedInterview = interviewSubs.slice((interviewPage - 1) * ADMIN_PAGE_SIZE, interviewPage * ADMIN_PAGE_SIZE);
+  const interviewTotalPages = Math.ceil(interviewSubs.length / ADMIN_PAGE_SIZE);
+  const pagedCompanies = sortedCompanies.slice((companyPage - 1) * ADMIN_PAGE_SIZE, companyPage * ADMIN_PAGE_SIZE);
+  const companyTotalPages = Math.ceil(sortedCompanies.length / ADMIN_PAGE_SIZE);
+
   const tabs: { key: Tab; label: string; count?: number }[] = [
     { key: "salary", label: "給与投稿", count: pendingSalary || undefined },
     { key: "interview", label: "面接投稿", count: pendingInterview || undefined },
     { key: "companies", label: "企業管理", count: pendingCount || undefined },
     { key: "industries", label: "業種管理" },
     { key: "articles", label: "記事投稿" },
+    { key: "contacts", label: "お問い合わせ", count: pendingContacts || undefined },
   ];
+
+  const categoryLabel: Record<string, string> = {
+    general: "一般",
+    delete: "削除依頼",
+    report: "不適切報告",
+    other: "その他",
+  };
+  const categoryColor: Record<string, string> = {
+    general: "bg-blue-100 text-blue-700",
+    delete: "bg-orange-100 text-orange-700",
+    report: "bg-red-100 text-red-700",
+    other: "bg-gray-100 text-gray-600",
+  };
 
   return (
     <div>
@@ -383,7 +413,7 @@ export default function AdminPage() {
           <h2 className="text-lg font-bold mb-4">給与投稿 ({salarySubs.length}件 / 承認待ち {pendingSalary}件)</h2>
           {salarySubs.length === 0 ? <p className="text-gray-400">投稿はありません</p> : (
             <div className="space-y-3">
-              {salarySubs.map((s) => (
+              {pagedSalary.map((s) => (
                 <div key={s.id} className={`bg-white border rounded-xl p-4 ${!s.is_approved ? "border-yellow-300 bg-yellow-50" : "border-gray-200"}`}>
                   {editingSalary === s.id ? (
                     <div className="space-y-3">
@@ -453,6 +483,7 @@ export default function AdminPage() {
                       <div className="flex gap-2 shrink-0">
                         <button onClick={() => { setEditingSalary(s.id); setSalaryEditForm(s); }} className="border border-gray-300 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:bg-gray-50">編集</button>
                         {!s.is_approved && <button onClick={() => approveSubmission("salary", s.id)} className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-green-700">承認</button>}
+                        {s.is_approved && <button onClick={() => unapproveSubmission("salary", s.id)} className="bg-orange-500 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-orange-600">非公開</button>}
                         <button onClick={() => deleteSubmission("salary", s.id)} className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-red-700">削除</button>
                       </div>
                     </div>
@@ -461,6 +492,7 @@ export default function AdminPage() {
               ))}
             </div>
           )}
+          <Pagination page={salaryPage} totalPages={salaryTotalPages} onChange={setSalaryPage} />
         </section>
       )}
 
@@ -470,7 +502,7 @@ export default function AdminPage() {
           <h2 className="text-lg font-bold mb-4">面接投稿 ({interviewSubs.length}件 / 承認待ち {pendingInterview}件)</h2>
           {interviewSubs.length === 0 ? <p className="text-gray-400">投稿はありません</p> : (
             <div className="space-y-3">
-              {interviewSubs.map((s) => (
+              {pagedInterview.map((s) => (
                 <div key={s.id} className={`bg-white border rounded-xl p-4 ${!s.is_approved ? "border-yellow-300 bg-yellow-50" : "border-gray-200"}`}>
                   {editingInterview === s.id ? (
                     <div className="space-y-3">
@@ -502,6 +534,33 @@ export default function AdminPage() {
                         <label className={labelClass}>タグ（カンマ区切り）</label>
                         <input value={interviewEditForm.tags || ""} onChange={(e) => setInterviewEditForm((f) => ({ ...f, tags: e.target.value }))} className={inputClass} />
                       </div>
+                      <div>
+                        <label className={labelClass}>面接内容</label>
+                        <div className="space-y-2 mt-1">
+                          {INTERVIEW_CONTENT_KEYS.map(({ key, label }) => (
+                            <div key={key} className="border border-gray-200 rounded-lg p-3">
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={interviewContentEdit[key]?.checked ?? false}
+                                  onChange={(e) => setInterviewContentEdit((prev) => ({ ...prev, [key]: { ...prev[key], checked: e.target.checked } }))}
+                                  className="w-4 h-4 text-blue-600"
+                                />
+                                <span className="text-sm text-gray-700">{label}</span>
+                              </label>
+                              {interviewContentEdit[key]?.checked && (
+                                <textarea
+                                  rows={2}
+                                  placeholder={`${label}の内容...`}
+                                  value={interviewContentEdit[key]?.comment ?? ""}
+                                  onChange={(e) => setInterviewContentEdit((prev) => ({ ...prev, [key]: { ...prev[key], comment: e.target.value } }))}
+                                  className={`${inputClass} mt-2 text-sm`}
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                       <div className="flex gap-2">
                         <button onClick={() => saveInterviewEdit(s.id)} className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700">保存</button>
                         <button onClick={() => setEditingInterview(null)} className="border border-gray-300 text-gray-600 px-3 py-1.5 rounded-lg text-sm">キャンセル</button>
@@ -521,8 +580,9 @@ export default function AdminPage() {
                         </p>
                       </div>
                       <div className="flex gap-2 shrink-0">
-                        <button onClick={() => { setEditingInterview(s.id); setInterviewEditForm(s); }} className="border border-gray-300 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:bg-gray-50">編集</button>
+                        <button onClick={() => { setEditingInterview(s.id); setInterviewEditForm(s); setInterviewContentEdit(parseInterviewContent(s.interview_content)); }} className="border border-gray-300 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:bg-gray-50">編集</button>
                         {!s.is_approved && <button onClick={() => approveSubmission("interview", s.id)} className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-green-700">承認</button>}
+                        {s.is_approved && <button onClick={() => unapproveSubmission("interview", s.id)} className="bg-orange-500 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-orange-600">非公開</button>}
                         <button onClick={() => deleteSubmission("interview", s.id)} className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-red-700">削除</button>
                       </div>
                     </div>
@@ -531,6 +591,7 @@ export default function AdminPage() {
               ))}
             </div>
           )}
+          <Pagination page={interviewPage} totalPages={interviewTotalPages} onChange={setInterviewPage} />
         </section>
       )}
 
@@ -539,12 +600,12 @@ export default function AdminPage() {
         <section>
           <div className="flex items-center gap-3 mb-4">
             <h2 className="text-lg font-bold">企業管理 ({allCompanies.length}件)</h2>
-            <input type="text" placeholder="企業名で検索..." value={companySearch} onChange={(e) => setCompanySearch(e.target.value)}
+            <input type="text" placeholder="企業名で検索..." value={companySearch} onChange={(e) => { setCompanySearch(e.target.value); setCompanyPage(1); }}
               className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 w-48" />
           </div>
           {sortedCompanies.length === 0 ? <p className="text-gray-400">企業が見つかりません</p> : (
             <div className="space-y-3">
-              {sortedCompanies.map((c) => (
+              {pagedCompanies.map((c) => (
                 <div key={c.id} className={`bg-white border rounded-xl p-4 ${!c.is_approved ? "border-yellow-300 bg-yellow-50" : "border-gray-200"}`}>
                   {editingCompany === c.id ? (
                     <div className="space-y-2">
@@ -595,6 +656,7 @@ export default function AdminPage() {
               ))}
             </div>
           )}
+          <Pagination page={companyPage} totalPages={companyTotalPages} onChange={setCompanyPage} />
         </section>
       )}
 
@@ -674,6 +736,43 @@ export default function AdminPage() {
               )}
             </div>
           </div>
+        </section>
+      )}
+      {/* Contacts */}
+      {tab === "contacts" && (
+        <section>
+          <h2 className="text-lg font-bold mb-4">お問い合わせ ({contacts.length}件 / 未対応 {pendingContacts}件)</h2>
+          {contacts.length === 0 ? <p className="text-gray-400">お問い合わせはありません</p> : (
+            <div className="space-y-3">
+              {contacts.map((c) => (
+                <div key={c.id} className={`bg-white border rounded-xl p-4 ${!c.is_resolved ? "border-yellow-300 bg-yellow-50" : "border-gray-200"}`}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${categoryColor[c.category] ?? "bg-gray-100 text-gray-600"}`}>
+                          {categoryLabel[c.category] ?? c.category}
+                        </span>
+                        {c.is_resolved && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">対応済み</span>}
+                        <span className="text-xs text-gray-400">{c.created_at.slice(0, 10)}</span>
+                      </div>
+                      {c.email && (
+                        <p className="text-xs text-blue-600 mb-1">返信先: {c.email}</p>
+                      )}
+                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{c.message}</p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      {!c.is_resolved && (
+                        <button onClick={() => resolveContact(c.id)} className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-green-700">
+                          対応済み
+                        </button>
+                      )}
+                      <button onClick={() => deleteContact(c.id)} className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-red-700">削除</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       )}
     </div>

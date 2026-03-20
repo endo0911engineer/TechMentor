@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api, InterviewSubmission, InterviewContent } from "@/lib/api";
+import { DIFFICULTY_OPTIONS, RESULT_OPTIONS } from "@/lib/constants";
+import Pagination from "@/components/Pagination";
 
 type InterviewWithCompany = InterviewSubmission & { company_name: string };
 
@@ -15,14 +17,14 @@ const CONTENT_LABELS: Record<string, string> = {
   other: "その他",
 };
 
-const DIFFICULTY_OPTIONS = ["とても簡単", "簡単", "普通", "難しい", "とても難しい"];
-const RESULT_OPTIONS = ["合格", "不合格", "辞退", "選考中"];
+const PAGE_SIZE = 10;
 
 export default function InterviewsPage() {
   const [interviews, setInterviews] = useState<InterviewWithCompany[]>([]);
   const [loading, setLoading] = useState(true);
   const [difficulty, setDifficulty] = useState("");
   const [result, setResult] = useState("");
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     api.getAllInterviews()
@@ -35,6 +37,8 @@ export default function InterviewsPage() {
     if (result && s.result !== result) return false;
     return true;
   });
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const selectClass = "border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white";
 
@@ -47,17 +51,17 @@ export default function InterviewsPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-6">
-        <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className={selectClass}>
+        <select value={difficulty} onChange={(e) => { setDifficulty(e.target.value); setPage(1); }} className={selectClass}>
           <option value="">難易度: すべて</option>
           {DIFFICULTY_OPTIONS.map((d) => <option key={d} value={d}>{d}</option>)}
         </select>
-        <select value={result} onChange={(e) => setResult(e.target.value)} className={selectClass}>
+        <select value={result} onChange={(e) => { setResult(e.target.value); setPage(1); }} className={selectClass}>
           <option value="">結果: すべて</option>
           {RESULT_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
         {(difficulty || result) && (
           <button
-            onClick={() => { setDifficulty(""); setResult(""); }}
+            onClick={() => { setDifficulty(""); setResult(""); setPage(1); }}
             className="text-sm text-blue-600 hover:underline px-2"
           >
             クリア
@@ -70,8 +74,10 @@ export default function InterviewsPage() {
       ) : filtered.length === 0 ? (
         <div className="text-center text-gray-400 py-16">体験談が見つかりませんでした</div>
       ) : (
-        <div className="space-y-4">
-          {filtered.map((s) => {
+        <>
+          <p className="text-sm text-gray-400 mb-4">{filtered.length}件</p>
+          <div className="space-y-4">
+          {paged.map((s) => {
             let content: InterviewContent | null = null;
             try {
               if (s.interview_content) content = JSON.parse(s.interview_content);
@@ -159,7 +165,9 @@ export default function InterviewsPage() {
               </div>
             );
           })}
-        </div>
+          </div>
+          <Pagination page={page} totalPages={totalPages} onChange={(p) => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
+        </>
       )}
     </div>
   );

@@ -7,6 +7,7 @@ from app.database import get_db
 from app.models.submission import SalarySubmission, InterviewSubmission
 from app.models.company import Company
 from app.models.article import Article
+from app.models.contact import Contact
 from app.schemas.company import CompanyCreate, CompanyRead, CompanyUpdate
 from app.schemas.article import ArticleCreate, ArticleRead
 
@@ -124,6 +125,16 @@ def approve_salary(submission_id: int, db: Session = Depends(get_db), _: None = 
     return {"message": "approved"}
 
 
+@router.post("/salary-submissions/{submission_id}/unapprove")
+def unapprove_salary(submission_id: int, db: Session = Depends(get_db), _: None = Depends(verify_admin)):
+    s = db.query(SalarySubmission).filter(SalarySubmission.id == submission_id).first()
+    if not s:
+        raise HTTPException(status_code=404, detail="Not found")
+    s.is_approved = False
+    db.commit()
+    return {"message": "unapproved"}
+
+
 @router.delete("/salary-submissions/{submission_id}")
 def delete_salary(submission_id: int, db: Session = Depends(get_db), _: None = Depends(verify_admin)):
     s = db.query(SalarySubmission).filter(SalarySubmission.id == submission_id).first()
@@ -178,6 +189,16 @@ def approve_interview(submission_id: int, db: Session = Depends(get_db), _: None
     s.is_approved = True
     db.commit()
     return {"message": "approved"}
+
+
+@router.post("/interview-submissions/{submission_id}/unapprove")
+def unapprove_interview(submission_id: int, db: Session = Depends(get_db), _: None = Depends(verify_admin)):
+    s = db.query(InterviewSubmission).filter(InterviewSubmission.id == submission_id).first()
+    if not s:
+        raise HTTPException(status_code=404, detail="Not found")
+    s.is_approved = False
+    db.commit()
+    return {"message": "unapproved"}
 
 
 @router.delete("/interview-submissions/{submission_id}")
@@ -264,5 +285,44 @@ def delete_article(article_id: int, db: Session = Depends(get_db), _: None = Dep
     if not article:
         raise HTTPException(status_code=404, detail="Not found")
     db.delete(article)
+    db.commit()
+    return {"message": "deleted"}
+
+
+# --- Contacts ---
+
+class ContactRead(BaseModel):
+    id: int
+    category: str
+    email: Optional[str] = None
+    message: str
+    is_resolved: bool
+    created_at: str
+
+    model_config = {"from_attributes": True}
+
+
+@router.get("/contacts", response_model=List[ContactRead])
+def list_contacts(db: Session = Depends(get_db), _: None = Depends(verify_admin)):
+    rows = db.query(Contact).order_by(Contact.is_resolved, Contact.created_at.desc()).all()
+    return [ContactRead(id=c.id, category=c.category, email=c.email, message=c.message, is_resolved=c.is_resolved, created_at=str(c.created_at)) for c in rows]
+
+
+@router.post("/contacts/{contact_id}/resolve")
+def resolve_contact(contact_id: int, db: Session = Depends(get_db), _: None = Depends(verify_admin)):
+    c = db.query(Contact).filter(Contact.id == contact_id).first()
+    if not c:
+        raise HTTPException(status_code=404, detail="Not found")
+    c.is_resolved = True
+    db.commit()
+    return {"message": "resolved"}
+
+
+@router.delete("/contacts/{contact_id}")
+def delete_contact(contact_id: int, db: Session = Depends(get_db), _: None = Depends(verify_admin)):
+    c = db.query(Contact).filter(Contact.id == contact_id).first()
+    if not c:
+        raise HTTPException(status_code=404, detail="Not found")
+    db.delete(c)
     db.commit()
     return {"message": "deleted"}

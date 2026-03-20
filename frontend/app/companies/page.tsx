@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { api, CompanyWithStats } from "@/lib/api";
 import CompanyCard from "@/components/CompanyCard";
+import Pagination from "@/components/Pagination";
+
+const PAGE_SIZE = 12;
 
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<CompanyWithStats[]>([]);
@@ -12,6 +15,8 @@ export default function CompaniesPage() {
   const [techStack, setTechStack] = useState("");
   const [industries, setIndustries] = useState<string[]>([]);
   const [techStacks, setTechStacks] = useState<string[]>([]);
+  const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState<"submission_count" | "avg_salary" | "name">("submission_count");
 
   useEffect(() => {
     api.getIndustries().then((data) => setIndustries(data.map((d) => d.name))).catch(() => {});
@@ -20,6 +25,7 @@ export default function CompaniesPage() {
 
   useEffect(() => {
     setLoading(true);
+    setPage(1);
     api.getCompaniesWithStats({
       search: search || undefined,
       industry: industry || undefined,
@@ -30,6 +36,15 @@ export default function CompaniesPage() {
   }, [search, industry, techStack]);
 
   const hasFilter = search || industry || techStack;
+
+  const sorted = [...companies].sort((a, b) => {
+    if (sortBy === "avg_salary") return (b.stats.avg_salary ?? 0) - (a.stats.avg_salary ?? 0);
+    if (sortBy === "name") return a.name.localeCompare(b.name, "ja");
+    return b.stats.submission_count - a.stats.submission_count;
+  });
+
+  const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
+  const paged = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const selectClass = "border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white";
 
   return (
@@ -53,6 +68,11 @@ export default function CompaniesPage() {
           <option value="">技術スタック: すべて</option>
           {techStacks.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
+        <select value={sortBy} onChange={(e) => { setSortBy(e.target.value as typeof sortBy); setPage(1); }} className={selectClass}>
+          <option value="submission_count">投稿数順</option>
+          <option value="avg_salary">平均年収順</option>
+          <option value="name">企業名順</option>
+        </select>
         {hasFilter && (
           <button
             onClick={() => { setSearch(""); setIndustry(""); setTechStack(""); }}
@@ -68,11 +88,15 @@ export default function CompaniesPage() {
       ) : companies.length === 0 ? (
         <div className="text-center text-gray-400 py-16">企業が見つかりませんでした</div>
       ) : (
-        <div className="grid md:grid-cols-2 gap-4">
-          {companies.map((c) => (
-            <CompanyCard key={c.id} company={c} stats={c.stats} />
-          ))}
-        </div>
+        <>
+          <p className="text-sm text-gray-400 mb-4">{companies.length}社</p>
+          <div className="grid md:grid-cols-2 gap-4">
+            {paged.map((c) => (
+              <CompanyCard key={c.id} company={c} stats={c.stats} />
+            ))}
+          </div>
+          <Pagination page={page} totalPages={totalPages} onChange={(p) => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
+        </>
       )}
     </div>
   );

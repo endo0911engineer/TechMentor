@@ -2,5 +2,6 @@ from app.models.company import Company
 from app.models.submission import SalarySubmission, InterviewSubmission
 from app.models.article import Article
 from app.models.industry import Industry
+from app.models.contact import Contact
 
-__all__ = ["Company", "SalarySubmission", "InterviewSubmission", "Article", "Industry"]
+__all__ = ["Company", "SalarySubmission", "InterviewSubmission", "Article", "Industry", "Contact"]

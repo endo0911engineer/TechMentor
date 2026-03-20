@@ -2,7 +2,8 @@ import { api } from "@/lib/api";
 import SalaryStats from "@/components/SalaryStats";
 import SalaryHistogram from "@/components/SalaryHistogram";
 import SalaryBreakdownCharts from "@/components/SalaryBreakdownCharts";
-import { SalaryCard, InterviewCard } from "@/components/SubmissionCard";
+import SalarySubmissionList from "@/components/SalarySubmissionList";
+import InterviewSubmissionList from "@/components/InterviewSubmissionList";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -59,6 +60,9 @@ export default async function CompanyDetailPage({ params }: Props) {
             体験をシェア
           </Link>
         </div>
+        {company.description && (
+          <p className="mt-3 text-sm text-gray-600 leading-relaxed">{company.description}</p>
+        )}
         {techStack.length > 0 && (
           <div className="mt-4">
             <p className="text-xs text-gray-400 mb-2">技術スタック</p>
@@ -79,8 +83,8 @@ export default async function CompanyDetailPage({ params }: Props) {
         <div className="bg-white rounded-xl p-5 shadow-sm">
           <SalaryStats stats={stats} />
           {salaries.length > 0 &&
-            stats.median_salary !== undefined &&
-            stats.avg_salary !== undefined && (
+            stats.median_salary != null &&
+            stats.avg_salary != null && (
               <SalaryHistogram
                 salaries={salaries}
                 median={stats.median_salary}
@@ -97,11 +101,7 @@ export default async function CompanyDetailPage({ params }: Props) {
           <h2 className="text-xl font-bold text-gray-900 mb-4">
             給与体験談 ({salarySubmissions.length}件)
           </h2>
-          <div className="space-y-4">
-            {salarySubmissions.map((s) => (
-              <SalaryCard key={s.id} s={s} />
-            ))}
-          </div>
+          <SalarySubmissionList submissions={salarySubmissions} />
         </section>
       )}
 
@@ -111,11 +111,7 @@ export default async function CompanyDetailPage({ params }: Props) {
           <h2 className="text-xl font-bold text-gray-900 mb-4">
             面接体験談 ({interviewSubmissions.length}件)
           </h2>
-          <div className="space-y-4">
-            {interviewSubmissions.map((s) => (
-              <InterviewCard key={s.id} s={s} companyId={id} />
-            ))}
-          </div>
+          <InterviewSubmissionList submissions={interviewSubmissions} companyId={id} />
         </section>
       )}
     </div>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import CompanyCarousel from "@/components/CompanyCarousel";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   let stats = { company_count: 0, salary_count: 0, interview_count: 0 };
