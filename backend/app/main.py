@@ -63,7 +63,7 @@ class ContactCreate(BaseModel):
 
 
 @app.post("/contacts", status_code=201)
-@limiter.limit("3/hour")
+@limiter.limit("20/hour")
 def submit_contact(request: Request, data: ContactCreate, db: Session = Depends(get_db)):
     contact = Contact(category=data.category, email=data.email, message=data.message)
     db.add(contact)

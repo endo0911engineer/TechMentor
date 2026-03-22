@@ -40,7 +40,7 @@ def _verify_recaptcha(token: str | None) -> None:
 
 
 @router.post("/salary-submissions", response_model=SalarySubmissionRead, status_code=201)
-@limiter.limit("5/hour")
+@limiter.limit("50/hour")
 def create_salary_submission(
     request: Request, data: SalarySubmissionCreate, db: Session = Depends(get_db)
 ):
@@ -53,7 +53,7 @@ def create_salary_submission(
 
 
 @router.post("/interview-submissions", response_model=InterviewSubmissionRead, status_code=201)
-@limiter.limit("5/hour")
+@limiter.limit("50/hour")
 def create_interview_submission(
     request: Request, data: InterviewSubmissionCreate, db: Session = Depends(get_db)
 ):
