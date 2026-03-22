@@ -1,3 +1,10 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "利用規約",
+  robots: { index: true, follow: true },
+};
+
 export default function TermsPage() {
   return (
     <div className="max-w-2xl mx-auto">

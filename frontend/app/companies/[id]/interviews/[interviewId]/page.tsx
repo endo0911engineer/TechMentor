@@ -1,11 +1,25 @@
 import { api, InterviewContent } from "@/lib/api";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 
 export const revalidate = 60;
 
 interface Props {
   params: { id: string; interviewId: string };
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  try {
+    const company = await api.getCompany(parseInt(params.id));
+    return {
+      title: `${company.name}の面接体験談`,
+      description: `${company.name}の面接体験談。面接回数・難易度・内容など実際の選考情報を掲載。`,
+      robots: { index: true, follow: true },
+    };
+  } catch {
+    return { title: "面接体験談", robots: { index: false, follow: false } };
+  }
 }
 
 const CONTENT_LABELS: Record<string, string> = {

@@ -35,3 +35,4 @@ class CompanyStats(BaseModel):
     min_salary: Optional[int] = None
     max_salary: Optional[int] = None
     submission_count: int = 0
+    tech_stacks: list[str] = []

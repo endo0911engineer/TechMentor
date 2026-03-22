@@ -1,8 +1,23 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import type { Metadata } from "next";
 
 export const revalidate = 60;
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  try {
+    const article = await api.getArticle(params.slug);
+    const desc = article.content?.replace(/\n/g, " ").slice(0, 120) ?? "";
+    return {
+      title: article.title,
+      description: desc ? `${desc}…` : undefined,
+      robots: { index: true, follow: true },
+    };
+  } catch {
+    return { title: "記事", robots: { index: false, follow: false } };
+  }
+}
 
 export default async function ArticlePage({ params }: { params: { slug: string } }) {
   let article: Awaited<ReturnType<typeof api.getArticle>> | null = null;

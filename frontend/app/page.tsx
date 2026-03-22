@@ -1,8 +1,15 @@
 import Link from "next/link";
 import { api } from "@/lib/api";
 import CompanyCarousel from "@/components/CompanyCarousel";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "DevPay | 日本ITエンジニア年収データベース",
+  description: "日本のIT企業のエンジニア年収・給与データ、面接体験談を匿名で共有するプラットフォーム。企業別の給与データ・面接情報を掲載。",
+  robots: { index: true, follow: true },
+};
 
 export default async function HomePage() {
   let stats = { company_count: 0, salary_count: 0, interview_count: 0 };
@@ -84,8 +91,12 @@ export default async function HomePage() {
       <section className="my-10 border-t border-gray-100 pt-12 text-center">
         <p className="text-xs font-semibold tracking-widest text-blue-500 uppercase mb-3">Share Your Experience</p>
         <h2 className="text-2xl font-bold text-gray-900">あなたの体験が、誰かの決断を変える</h2>
-        <p className="mt-2 mb-8 text-gray-500 max-w-md mx-auto">
+        <p className="mt-2 mb-4 text-gray-500 max-w-md mx-auto">
           給与交渉・転職・面接対策。リアルなデータがエンジニアの選択肢を広げます。
+        </p>
+        <p className="mb-8 text-sm text-gray-400 max-w-sm mx-auto">
+          企業規模や業界を問わず、すべてのエンジニアの声を歓迎します。<br />
+          スタートアップ、SIer、地方企業など、どんな環境でも投稿できます。
         </p>
         <Link
           href="/submit"

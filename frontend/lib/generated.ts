@@ -641,6 +641,11 @@ export interface components {
              * @default 0
              */
             submission_count: number;
+            /**
+             * Tech Stacks
+             * @default []
+             */
+            tech_stacks: string[];
         };
         /** CompanyUpdate */
         CompanyUpdate: {

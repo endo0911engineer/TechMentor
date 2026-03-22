@@ -1,4 +1,10 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "よくある質問",
+  robots: { index: true, follow: true },
+};
 
 const faqs = [
   {

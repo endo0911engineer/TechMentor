@@ -8,8 +8,13 @@ import Footer from "@/components/Footer";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "DevPay - 日本ITエンジニア給与データベース",
-  description: "日本のIT企業のエンジニア年収・面接体験を共有するプラットフォーム",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://devpay.jp"),
+  title: {
+    default: "DevPay | 日本ITエンジニア年収データベース",
+    template: "%s | DevPay",
+  },
+  description: "日本のIT企業のエンジニア年収・面接体験談を匿名で共有するプラットフォーム。企業別の給与データ・面接情報を掲載。",
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

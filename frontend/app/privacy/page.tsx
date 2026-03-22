@@ -1,3 +1,10 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "プライバシーポリシー",
+  robots: { index: true, follow: true },
+};
+
 export default function PrivacyPage() {
   return (
     <div className="max-w-2xl mx-auto">
@@ -11,7 +18,6 @@ export default function PrivacyPage() {
           <ul className="list-disc pl-5 space-y-1">
             <li>投稿フォームに入力された情報（企業名・年収・面接体験など）</li>
             <li>アクセスログ（IPアドレス、ブラウザ情報、アクセス日時など）</li>
-            <li>Cookie・ローカルストレージを通じた情報（管理画面の認証情報など）</li>
           </ul>
         </section>
 

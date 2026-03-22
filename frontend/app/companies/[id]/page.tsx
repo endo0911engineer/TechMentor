@@ -6,11 +6,25 @@ import SalarySubmissionList from "@/components/SalarySubmissionList";
 import InterviewSubmissionList from "@/components/InterviewSubmissionList";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 
 export const revalidate = 60;
 
 interface Props {
   params: { id: string };
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  try {
+    const company = await api.getCompany(parseInt(params.id));
+    return {
+      title: `${company.name}の年収・給与`,
+      description: `${company.name}のエンジニア年収・給与データ、面接体験談を掲載。実際に働くエンジニアによるリアルな情報。`,
+      robots: { index: true, follow: true },
+    };
+  } catch {
+    return { title: "企業詳細", robots: { index: false, follow: false } };
+  }
 }
 
 export default async function CompanyDetailPage({ params }: Props) {

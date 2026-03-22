@@ -336,7 +336,11 @@ function SubmitForm() {
       )}
 
       <h1 className="text-2xl font-bold text-gray-900 mb-2">情報を投稿する</h1>
-      <p className="text-sm text-gray-500 mb-6">投稿は匿名で公開されます</p>
+      <p className="text-sm text-gray-500 mb-3">投稿は匿名で公開されます</p>
+      <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mb-6 text-sm text-blue-800">
+        企業規模や業界を問わず、すべてのエンジニアの声を歓迎します。<br />
+        スタートアップ、SIer、地方企業など、どんな環境でも投稿できます。
+      </div>
 
       <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
         <button

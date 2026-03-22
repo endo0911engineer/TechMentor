@@ -73,7 +73,7 @@ export const api = {
         ...c,
         stats: statsResults[i].status === "fulfilled"
           ? (statsResults[i] as PromiseFulfilledResult<CompanyStats>).value
-          : { submission_count: 0 },
+          : { submission_count: 0, tech_stacks: [] },
       }))
       .filter((c) => c.stats.submission_count > 0);
   },

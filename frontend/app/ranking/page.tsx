@@ -1,6 +1,13 @@
 import { api, Company } from "@/lib/api";
+import type { Metadata } from "next";
 
 export const revalidate = 60;
+
+export const metadata: Metadata = {
+  title: "年収ランキング",
+  description: "ITエンジニアの平均年収が高い企業ランキング。実際の給与データに基づくランキングを掲載。",
+  robots: { index: true, follow: true },
+};
 
 interface RankingItem {
   company: Company;

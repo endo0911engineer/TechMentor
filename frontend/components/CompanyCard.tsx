@@ -31,9 +31,9 @@ export default function CompanyCard({ company, stats }: Props) {
           )}
         </div>
 
-        {company.tech_stack && (
+        {stats?.tech_stacks && stats.tech_stacks.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1">
-            {company.tech_stack.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 5).map((t) => (
+            {stats.tech_stacks.slice(0, 5).map((t) => (
               <span key={t} className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">{t}</span>
             ))}
           </div>

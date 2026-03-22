@@ -1,7 +1,14 @@
 import Link from "next/link";
 import { api } from "@/lib/api";
+import type { Metadata } from "next";
 
 export const revalidate = 60;
+
+export const metadata: Metadata = {
+  title: "記事一覧",
+  description: "エンジニアの転職・年収・キャリアに関するお役立ち記事を掲載。",
+  robots: { index: true, follow: true },
+};
 
 export default async function ArticlesPage() {
   let articles: Awaited<ReturnType<typeof api.getArticles>> = [];
