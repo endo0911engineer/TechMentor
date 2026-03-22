@@ -13,9 +13,86 @@ import {
   RESULT_OPTIONS,
   DIFFICULTY_OPTIONS,
   INTERVIEW_CONTENT_KEYS,
+  EMPLOYMENT_TYPE_OPTIONS,
 } from "@/lib/constants";
 
+declare global {
+  interface Window {
+    grecaptcha: {
+      ready: (fn: () => void) => void;
+      execute: (siteKey: string, options: { action: string }) => Promise<string>;
+    };
+  }
+}
+
 const NEW_COMPANY_VALUE = "__new__";
+
+async function getRecaptchaToken(action: string): Promise<string> {
+  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+  if (!siteKey || typeof window === "undefined" || !window.grecaptcha) return "";
+  return new Promise((resolve) => {
+    window.grecaptcha.ready(() => {
+      window.grecaptcha.execute(siteKey, { action }).then(resolve);
+    });
+  });
+}
+
+const inputClass =
+  "w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400";
+const labelClass = "block text-sm font-medium text-gray-700 mb-1";
+
+function ConfirmRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex gap-3 py-2 border-b border-gray-100 last:border-0">
+      <dt className="text-gray-500 shrink-0 w-28 text-sm">{label}</dt>
+      <dd className="text-gray-900 text-sm break-words">{value}</dd>
+    </div>
+  );
+}
+
+function CompanySelector({
+  companies,
+  value,
+  onChange,
+  newName,
+  setNewName,
+}: {
+  companies: import("@/lib/api").Company[];
+  value: string;
+  onChange: (v: string) => void;
+  newName: string;
+  setNewName: (v: string) => void;
+}) {
+  return (
+    <>
+      <div>
+        <label className={labelClass}>企業 <span className="text-red-500">*</span></label>
+        <select required value={value} onChange={(e) => onChange(e.target.value)} className={inputClass}>
+          <option value="">選択してください</option>
+          {companies.map((c) => (
+            <option key={c.id} value={String(c.id)}>{c.name}</option>
+          ))}
+          <option value={NEW_COMPANY_VALUE}>＋ 新しい企業を追加</option>
+        </select>
+      </div>
+      {value === NEW_COMPANY_VALUE && (
+        <div className="border border-blue-200 bg-blue-50 rounded-xl p-4 space-y-3">
+          <p className="text-sm font-medium text-blue-700">新しい企業を登録</p>
+          <div>
+            <label className={labelClass}>企業名 <span className="text-red-500">*</span></label>
+            <input
+              type="text"
+              placeholder="例: 株式会社〇〇"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 const defaultInterviewContent = (): InterviewContent => ({
   coding: { checked: false },
@@ -39,11 +116,9 @@ function SubmitForm() {
 
   const [salaryCompany, setSalaryCompany] = useState(defaultCompanyId);
   const [salaryNewName, setSalaryNewName] = useState("");
-  const [salaryNewIndustry, setSalaryNewIndustry] = useState("");
 
   const [interviewCompany, setInterviewCompany] = useState(defaultCompanyId);
   const [interviewNewName, setInterviewNewName] = useState("");
-  const [interviewNewIndustry, setInterviewNewIndustry] = useState("");
 
   // 給与フォーム
   const [salaryForm, setSalaryForm] = useState({
@@ -61,6 +136,7 @@ function SubmitForm() {
   // 面接フォーム
   const [interviewForm, setInterviewForm] = useState({
     job_title: "",
+    employment_type: "",
     interview_rounds: "",
     result: "",
     difficulty: "",
@@ -75,11 +151,10 @@ function SubmitForm() {
 
   const resolveCompanyId = async (
     selectedValue: string,
-    newName: string,
-    newIndustry: string
+    newName: string
   ): Promise<number> => {
     if (selectedValue === NEW_COMPANY_VALUE) {
-      const company = await api.createCompany({ name: newName, industry: newIndustry || undefined });
+      const company = await api.createCompany({ name: newName });
       return company.id;
     }
     return parseInt(selectedValue);
@@ -98,7 +173,10 @@ function SubmitForm() {
     setShowConfirm(null);
     setLoading(true);
     try {
-      const companyId = await resolveCompanyId(salaryCompany, salaryNewName, salaryNewIndustry);
+      const [companyId, recaptchaToken] = await Promise.all([
+        resolveCompanyId(salaryCompany, salaryNewName),
+        getRecaptchaToken("submit_salary"),
+      ]);
       await api.submitSalary({
         company_id: companyId,
         job_title: salaryForm.job_title || undefined,
@@ -110,6 +188,7 @@ function SubmitForm() {
         overtime_feeling: salaryForm.overtime_feeling || undefined,
         tech_stack: selectedTechStack.length > 0 ? selectedTechStack.join(",") : undefined,
         comment: salaryForm.comment || undefined,
+        recaptcha_token: recaptchaToken || undefined,
       });
       setSubmitted(true);
     } finally {
@@ -135,14 +214,19 @@ function SubmitForm() {
     setShowConfirm(null);
     setLoading(true);
     try {
-      const companyId = await resolveCompanyId(interviewCompany, interviewNewName, interviewNewIndustry);
+      const [companyId, recaptchaToken] = await Promise.all([
+        resolveCompanyId(interviewCompany, interviewNewName),
+        getRecaptchaToken("submit_interview"),
+      ]);
       await api.submitInterview({
         company_id: companyId,
         job_title: interviewForm.job_title || undefined,
+        employment_type: interviewForm.employment_type || undefined,
         interview_rounds: parseInt(interviewForm.interview_rounds),
         result: interviewForm.result || undefined,
         difficulty: interviewForm.difficulty || undefined,
         interview_content: JSON.stringify(interviewContent),
+        recaptcha_token: recaptchaToken || undefined,
       });
       setSubmitted(true);
     } finally {
@@ -183,17 +267,6 @@ function SubmitForm() {
     );
   }
 
-  const inputClass =
-    "w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400";
-  const labelClass = "block text-sm font-medium text-gray-700 mb-1";
-
-  const ConfirmRow = ({ label, value }: { label: string; value: string }) => (
-    <div className="flex gap-3 py-2 border-b border-gray-100 last:border-0">
-      <dt className="text-gray-500 shrink-0 w-28 text-sm">{label}</dt>
-      <dd className="text-gray-900 text-sm break-words">{value}</dd>
-    </div>
-  );
-
   const salaryCompanyName =
     salaryCompany === NEW_COMPANY_VALUE
       ? salaryNewName
@@ -203,60 +276,6 @@ function SubmitForm() {
     interviewCompany === NEW_COMPANY_VALUE
       ? interviewNewName
       : companies.find((c) => String(c.id) === interviewCompany)?.name ?? "";
-
-  const CompanySelector = ({
-    value,
-    onChange,
-    newName,
-    setNewName,
-    newIndustry,
-    setNewIndustry,
-  }: {
-    value: string;
-    onChange: (v: string) => void;
-    newName: string;
-    setNewName: (v: string) => void;
-    newIndustry: string;
-    setNewIndustry: (v: string) => void;
-  }) => (
-    <>
-      <div>
-        <label className={labelClass}>企業 <span className="text-red-500">*</span></label>
-        <select required value={value} onChange={(e) => onChange(e.target.value)} className={inputClass}>
-          <option value="">選択してください</option>
-          {companies.map((c) => (
-            <option key={c.id} value={String(c.id)}>{c.name}</option>
-          ))}
-          <option value={NEW_COMPANY_VALUE}>＋ 新しい企業を追加</option>
-        </select>
-      </div>
-      {value === NEW_COMPANY_VALUE && (
-        <div className="border border-blue-200 bg-blue-50 rounded-xl p-4 space-y-3">
-          <p className="text-sm font-medium text-blue-700">新しい企業を登録</p>
-          <div>
-            <label className={labelClass}>企業名 <span className="text-red-500">*</span></label>
-            <input
-              type="text"
-              placeholder="例: 株式会社〇〇"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>業種（任意）</label>
-            <input
-              type="text"
-              placeholder="例: SaaS / クラウド"
-              value={newIndustry}
-              onChange={(e) => setNewIndustry(e.target.value)}
-              className={inputClass}
-            />
-          </div>
-        </div>
-      )}
-    </>
-  );
 
   return (
     <div className="max-w-lg mx-auto">
@@ -286,6 +305,7 @@ function SubmitForm() {
                   <>
                     <ConfirmRow label="企業" value={interviewCompanyName} />
                     {interviewForm.job_title && <ConfirmRow label="職種" value={interviewForm.job_title} />}
+                    {interviewForm.employment_type && <ConfirmRow label="雇用形態" value={interviewForm.employment_type} />}
                     <ConfirmRow label="面接回数" value={`${interviewForm.interview_rounds}回`} />
                     {interviewForm.result && <ConfirmRow label="結果" value={interviewForm.result} />}
                     {interviewForm.difficulty && <ConfirmRow label="難易度" value={interviewForm.difficulty} />}
@@ -341,12 +361,11 @@ function SubmitForm() {
       {tab === "salary" && (
         <form onSubmit={handleSalarySubmit} className="space-y-4">
           <CompanySelector
+            companies={companies}
             value={salaryCompany}
             onChange={setSalaryCompany}
             newName={salaryNewName}
             setNewName={setSalaryNewName}
-            newIndustry={salaryNewIndustry}
-            setNewIndustry={setSalaryNewIndustry}
           />
           <div>
             <label className={labelClass}>職種</label>
@@ -475,23 +494,35 @@ function SubmitForm() {
       {tab === "interview" && (
         <form onSubmit={handleInterviewSubmit} className="space-y-4">
           <CompanySelector
+            companies={companies}
             value={interviewCompany}
             onChange={setInterviewCompany}
             newName={interviewNewName}
             setNewName={setInterviewNewName}
-            newIndustry={interviewNewIndustry}
-            setNewIndustry={setInterviewNewIndustry}
           />
-          <div>
-            <label className={labelClass}>職種</label>
-            <select
-              value={interviewForm.job_title}
-              onChange={(e) => setInterviewForm({ ...interviewForm, job_title: e.target.value })}
-              className={inputClass}
-            >
-              <option value="">選択してください</option>
-              {JOB_TITLES.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>職種</label>
+              <select
+                value={interviewForm.job_title}
+                onChange={(e) => setInterviewForm({ ...interviewForm, job_title: e.target.value })}
+                className={inputClass}
+              >
+                <option value="">選択してください</option>
+                {JOB_TITLES.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>雇用形態</label>
+              <select
+                value={interviewForm.employment_type}
+                onChange={(e) => setInterviewForm({ ...interviewForm, employment_type: e.target.value })}
+                className={inputClass}
+              >
+                <option value="">選択してください</option>
+                {EMPLOYMENT_TYPE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>

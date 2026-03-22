@@ -1,9 +1,14 @@
 import os
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException, Cookie, Response, Request
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel
 from app.database import get_db
+from app.limiter import limiter
+from app.auth import (
+    SESSION_COOKIE, SESSION_TTL, COOKIE_SECURE,
+    create_session, revoke_session, validate_session, verify_admin,
+)
 from app.models.submission import SalarySubmission, InterviewSubmission
 from app.models.company import Company
 from app.models.article import Article
@@ -16,9 +21,41 @@ router = APIRouter()
 ADMIN_KEY = os.getenv("ADMIN_KEY")
 
 
-def verify_admin(x_admin_key: Optional[str] = Header(None)):
-    if not ADMIN_KEY or x_admin_key != ADMIN_KEY:
-        raise HTTPException(status_code=403, detail="Invalid admin key")
+# --- 認証エンドポイント ---
+
+class LoginRequest(BaseModel):
+    key: str
+
+
+@router.post("/login")
+@limiter.limit("10/hour")
+def login(request: Request, data: LoginRequest, response: Response):
+    if not ADMIN_KEY or data.key != ADMIN_KEY:
+        raise HTTPException(status_code=401, detail="管理者キーが正しくありません")
+    token = create_session()
+    response.set_cookie(
+        key=SESSION_COOKIE,
+        value=token,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite="strict",
+        max_age=int(SESSION_TTL.total_seconds()),
+        path="/",
+    )
+    return {"ok": True}
+
+
+@router.post("/logout")
+def logout(response: Response, admin_session: Optional[str] = Cookie(None)):
+    if admin_session:
+        revoke_session(admin_session)
+    response.delete_cookie(key=SESSION_COOKIE, path="/")
+    return {"ok": True}
+
+
+@router.get("/me")
+def me(_: None = Depends(verify_admin)):
+    return {"ok": True}
 
 
 # --- Schemas ---
@@ -59,6 +96,7 @@ class InterviewSubmissionAdmin(BaseModel):
     company_id: int
     company_name: str
     job_title: Optional[str] = None
+    employment_type: Optional[str] = None
     interview_rounds: Optional[int] = None
     result: Optional[str] = None
     difficulty: Optional[str] = None
@@ -72,6 +110,7 @@ class InterviewSubmissionAdmin(BaseModel):
 
 class InterviewSubmissionUpdate(BaseModel):
     job_title: Optional[str] = None
+    employment_type: Optional[str] = None
     interview_rounds: Optional[int] = None
     result: Optional[str] = None
     difficulty: Optional[str] = None

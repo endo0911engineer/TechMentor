@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api, InterviewSubmission, InterviewContent } from "@/lib/api";
-import { DIFFICULTY_OPTIONS, RESULT_OPTIONS } from "@/lib/constants";
+import { DIFFICULTY_OPTIONS, RESULT_OPTIONS, EMPLOYMENT_TYPE_OPTIONS, JOB_TITLES } from "@/lib/constants";
 import Pagination from "@/components/Pagination";
 
 type InterviewWithCompany = InterviewSubmission & { company_name: string };
@@ -24,6 +24,8 @@ export default function InterviewsPage() {
   const [loading, setLoading] = useState(true);
   const [difficulty, setDifficulty] = useState("");
   const [result, setResult] = useState("");
+  const [employmentType, setEmploymentType] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -35,6 +37,8 @@ export default function InterviewsPage() {
   const filtered = interviews.filter((s) => {
     if (difficulty && s.difficulty !== difficulty) return false;
     if (result && s.result !== result) return false;
+    if (employmentType && s.employment_type !== employmentType) return false;
+    if (jobTitle && s.job_title !== jobTitle) return false;
     return true;
   });
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
@@ -51,6 +55,14 @@ export default function InterviewsPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-6">
+        <select value={employmentType} onChange={(e) => { setEmploymentType(e.target.value); setPage(1); }} className={selectClass}>
+          <option value="">雇用形態: すべて</option>
+          {EMPLOYMENT_TYPE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+        </select>
+        <select value={jobTitle} onChange={(e) => { setJobTitle(e.target.value); setPage(1); }} className={selectClass}>
+          <option value="">職種: すべて</option>
+          {JOB_TITLES.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
         <select value={difficulty} onChange={(e) => { setDifficulty(e.target.value); setPage(1); }} className={selectClass}>
           <option value="">難易度: すべて</option>
           {DIFFICULTY_OPTIONS.map((d) => <option key={d} value={d}>{d}</option>)}
@@ -59,9 +71,9 @@ export default function InterviewsPage() {
           <option value="">結果: すべて</option>
           {RESULT_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
-        {(difficulty || result) && (
+        {(difficulty || result || employmentType || jobTitle) && (
           <button
-            onClick={() => { setDifficulty(""); setResult(""); setPage(1); }}
+            onClick={() => { setDifficulty(""); setResult(""); setEmploymentType(""); setJobTitle(""); setPage(1); }}
             className="text-sm text-blue-600 hover:underline px-2"
           >
             クリア
@@ -120,12 +132,19 @@ export default function InterviewsPage() {
                   </div>
                 </div>
 
-                {/* Difficulty */}
-                {s.difficulty && (
-                  <span className="inline-block text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full mb-3">
-                    難易度: {s.difficulty}
-                  </span>
-                )}
+                {/* 雇用形態・難易度 */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {s.employment_type && (
+                    <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+                      {s.employment_type}
+                    </span>
+                  )}
+                  {s.difficulty && (
+                    <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
+                      難易度: {s.difficulty}
+                    </span>
+                  )}
+                </div>
 
                 {/* Content items */}
                 {checkedItems.length > 0 && (

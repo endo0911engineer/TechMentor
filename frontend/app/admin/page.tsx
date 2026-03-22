@@ -11,6 +11,7 @@ import {
   RESULT_OPTIONS,
   DIFFICULTY_OPTIONS,
   INTERVIEW_CONTENT_KEYS,
+  EMPLOYMENT_TYPE_OPTIONS,
 } from "@/lib/constants";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -52,9 +53,15 @@ function slugify(text: string): string {
   return text.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").slice(0, 80);
 }
 
+const JSON_HEADERS = { "Content-Type": "application/json" };
+
+function adminFetch(url: string, options: RequestInit = {}) {
+  return fetch(url, { ...options, credentials: "include", headers: { ...JSON_HEADERS, ...(options.headers as Record<string, string> | undefined) } });
+}
+
 export default function AdminPage() {
-  const [key, setKey] = useState("");
-  const [authed, setAuthed] = useState(false);
+  const [loginKey, setLoginKey] = useState("");
+  const [authed, setAuthed] = useState<boolean | null>(null); // null = 確認中
   const [tab, setTab] = useState<Tab>("salary");
   const [salarySubs, setSalarySubs] = useState<SalarySubmission[]>([]);
   const [interviewSubs, setInterviewSubs] = useState<InterviewSubmission[]>([]);
@@ -70,12 +77,16 @@ export default function AdminPage() {
   const [editingSalary, setEditingSalary] = useState<number | null>(null);
   const [salaryEditForm, setSalaryEditForm] = useState<Partial<SalarySubmission>>({});
   const [salaryPage, setSalaryPage] = useState(1);
+  const [salaryFilterApproval, setSalaryFilterApproval] = useState("");
+  const [salaryFilterSearch, setSalaryFilterSearch] = useState("");
 
   // interview edit
   const [editingInterview, setEditingInterview] = useState<number | null>(null);
   const [interviewEditForm, setInterviewEditForm] = useState<Partial<InterviewSubmission>>({});
   const [interviewContentEdit, setInterviewContentEdit] = useState<InterviewContentMap>({});
   const [interviewPage, setInterviewPage] = useState(1);
+  const [interviewFilterApproval, setInterviewFilterApproval] = useState("");
+  const [interviewFilterSearch, setInterviewFilterSearch] = useState("");
 
   // company
   const [editingCompany, setEditingCompany] = useState<number | null>(null);
@@ -92,11 +103,6 @@ export default function AdminPage() {
   const [articleLoading, setArticleLoading] = useState(false);
   const [articleMessage, setArticleMessage] = useState("");
 
-  const headers = useCallback(
-    () => ({ "Content-Type": "application/json", "X-Admin-Key": key }),
-    [key]
-  );
-
   const loadIndustries = useCallback(async () => {
     const data = await fetch(`${API_URL}/industries`).then((r) => r.json());
     setIndustries(data);
@@ -106,14 +112,11 @@ export default function AdminPage() {
     setLoading(true);
     try {
       const [s, i, c, a, ct] = await Promise.all([
-        fetch(`${API_URL}/admin/salary-submissions`, { headers: headers() }).then((r) => {
-          if (!r.ok) throw new Error("auth");
-          return r.json();
-        }),
-        fetch(`${API_URL}/admin/interview-submissions`, { headers: headers() }).then((r) => r.json()),
-        fetch(`${API_URL}/admin/companies`, { headers: headers() }).then((r) => r.json()),
-        fetch(`${API_URL}/admin/articles`, { headers: headers() }).then((r) => r.json()),
-        fetch(`${API_URL}/admin/contacts`, { headers: headers() }).then((r) => r.json()),
+        adminFetch(`${API_URL}/admin/salary-submissions`).then((r) => r.json()),
+        adminFetch(`${API_URL}/admin/interview-submissions`).then((r) => r.json()),
+        adminFetch(`${API_URL}/admin/companies`).then((r) => r.json()),
+        adminFetch(`${API_URL}/admin/articles`).then((r) => r.json()),
+        adminFetch(`${API_URL}/admin/contacts`).then((r) => r.json()),
       ]);
       setSalarySubs(s);
       setInterviewSubs(i);
@@ -121,19 +124,20 @@ export default function AdminPage() {
       setArticles(a);
       setContacts(ct);
       setAuthed(true);
-      sessionStorage.setItem("admin_key", key);
     } catch {
-      setMessage("認証に失敗しました。管理者キーを確認してください。");
+      setMessage("データの取得に失敗しました。");
     } finally {
       setLoading(false);
     }
-  }, [key, headers]);
+  }, []);
 
   useEffect(() => {
-    const saved = sessionStorage.getItem("admin_key");
-    if (saved) setKey(saved);
+    // Cookie セッションが有効か確認
+    adminFetch(`${API_URL}/admin/me`)
+      .then((r) => { if (r.ok) load(); else setAuthed(false); })
+      .catch(() => setAuthed(false));
     loadIndustries();
-  }, [loadIndustries]);
+  }, [load, loadIndustries]);
 
   const askConfirm = (message: string, onConfirm: () => void) => {
     setConfirm({ message, onConfirm });
@@ -141,26 +145,25 @@ export default function AdminPage() {
 
   // salary
   const approveSubmission = async (type: "salary" | "interview", id: number) => {
-    await fetch(`${API_URL}/admin/${type}-submissions/${id}/approve`, { method: "POST", headers: headers() });
+    await adminFetch(`${API_URL}/admin/${type}-submissions/${id}/approve`, { method: "POST" });
     load();
   };
 
   const unapproveSubmission = async (type: "salary" | "interview", id: number) => {
-    await fetch(`${API_URL}/admin/${type}-submissions/${id}/unapprove`, { method: "POST", headers: headers() });
+    await adminFetch(`${API_URL}/admin/${type}-submissions/${id}/unapprove`, { method: "POST" });
     load();
   };
 
   const deleteSubmission = (type: "salary" | "interview", id: number) => {
     askConfirm("この投稿を削除しますか？この操作は取り消せません。", async () => {
-      await fetch(`${API_URL}/admin/${type}-submissions/${id}`, { method: "DELETE", headers: headers() });
+      await adminFetch(`${API_URL}/admin/${type}-submissions/${id}`, { method: "DELETE" });
       load();
     });
   };
 
   const saveSalaryEdit = async (id: number) => {
-    await fetch(`${API_URL}/admin/salary-submissions/${id}`, {
+    await adminFetch(`${API_URL}/admin/salary-submissions/${id}`, {
       method: "PATCH",
-      headers: headers(),
       body: JSON.stringify(salaryEditForm),
     });
     setEditingSalary(null);
@@ -168,9 +171,8 @@ export default function AdminPage() {
   };
 
   const saveInterviewEdit = async (id: number) => {
-    await fetch(`${API_URL}/admin/interview-submissions/${id}`, {
+    await adminFetch(`${API_URL}/admin/interview-submissions/${id}`, {
       method: "PATCH",
-      headers: headers(),
       body: JSON.stringify({
         ...interviewEditForm,
         interview_content: JSON.stringify(interviewContentEdit),
@@ -182,13 +184,13 @@ export default function AdminPage() {
 
   // company
   const approveCompany = async (id: number) => {
-    await fetch(`${API_URL}/admin/companies/${id}/approve`, { method: "POST", headers: headers() });
+    await adminFetch(`${API_URL}/admin/companies/${id}/approve`, { method: "POST" });
     load();
   };
 
   const deleteCompany = (id: number) => {
     askConfirm("この企業を削除しますか？紐づく投稿がある場合は削除できません。", async () => {
-      const res = await fetch(`${API_URL}/admin/companies/${id}`, { method: "DELETE", headers: headers() });
+      const res = await adminFetch(`${API_URL}/admin/companies/${id}`, { method: "DELETE" });
       if (!res.ok) {
         setMessage("この企業には投稿データが紐づいているため削除できません。先に投稿を削除してください。");
         return;
@@ -203,9 +205,8 @@ export default function AdminPage() {
   };
 
   const saveEditCompany = async (id: number) => {
-    await fetch(`${API_URL}/admin/companies/${id}`, {
+    await adminFetch(`${API_URL}/admin/companies/${id}`, {
       method: "PATCH",
-      headers: headers(),
       body: JSON.stringify({ name: editForm.name, industry: editForm.industry || null, description: editForm.description || null }),
     });
     setEditingCompany(null);
@@ -215,9 +216,8 @@ export default function AdminPage() {
   // industry
   const addIndustry = async () => {
     if (!newIndustryName.trim()) return;
-    const res = await fetch(`${API_URL}/industries`, {
+    const res = await adminFetch(`${API_URL}/industries`, {
       method: "POST",
-      headers: headers(),
       body: JSON.stringify({ name: newIndustryName.trim() }),
     });
     if (!res.ok) {
@@ -232,20 +232,20 @@ export default function AdminPage() {
 
   const deleteIndustry = (id: number, name: string) => {
     askConfirm(`業種「${name}」を削除しますか？`, async () => {
-      await fetch(`${API_URL}/industries/${id}`, { method: "DELETE", headers: headers() });
+      await adminFetch(`${API_URL}/industries/${id}`, { method: "DELETE" });
       loadIndustries();
     });
   };
 
   // contacts
   const resolveContact = async (id: number) => {
-    await fetch(`${API_URL}/admin/contacts/${id}/resolve`, { method: "POST", headers: headers() });
+    await adminFetch(`${API_URL}/admin/contacts/${id}/resolve`, { method: "POST" });
     load();
   };
 
   const deleteContact = (id: number) => {
     askConfirm("このお問い合わせを削除しますか？", async () => {
-      await fetch(`${API_URL}/admin/contacts/${id}`, { method: "DELETE", headers: headers() });
+      await adminFetch(`${API_URL}/admin/contacts/${id}`, { method: "DELETE" });
       load();
     });
   };
@@ -253,7 +253,7 @@ export default function AdminPage() {
   // article
   const deleteArticle = (id: number) => {
     askConfirm("この記事を削除しますか？", async () => {
-      await fetch(`${API_URL}/admin/articles/${id}`, { method: "DELETE", headers: headers() });
+      await adminFetch(`${API_URL}/admin/articles/${id}`, { method: "DELETE" });
       load();
     });
   };
@@ -263,9 +263,8 @@ export default function AdminPage() {
     setArticleLoading(true);
     setArticleMessage("");
     try {
-      const res = await fetch(`${API_URL}/admin/articles`, {
+      const res = await adminFetch(`${API_URL}/admin/articles`, {
         method: "POST",
-        headers: headers(),
         body: JSON.stringify(articleForm),
       });
       if (!res.ok) {
@@ -281,11 +280,35 @@ export default function AdminPage() {
     }
   };
 
-  const logout = () => {
-    sessionStorage.removeItem("admin_key");
-    setAuthed(false);
-    setKey("");
+  const login = async () => {
+    setLoading(true);
+    setMessage("");
+    try {
+      const res = await fetch(`${API_URL}/admin/login`, {
+        method: "POST",
+        credentials: "include",
+        headers: JSON_HEADERS,
+        body: JSON.stringify({ key: loginKey }),
+      });
+      if (!res.ok) {
+        setMessage("管理者キーが正しくありません");
+        return;
+      }
+      await load();
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const logout = async () => {
+    await adminFetch(`${API_URL}/admin/logout`, { method: "POST" });
+    setAuthed(false);
+    setLoginKey("");
+  };
+
+  if (authed === null) {
+    return <div className="text-center text-gray-400 py-20">確認中...</div>;
+  }
 
   if (!authed) {
     return (
@@ -295,13 +318,13 @@ export default function AdminPage() {
         <input
           type="password"
           placeholder="管理者キー"
-          value={key}
-          onChange={(e) => setKey(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && load()}
+          value={loginKey}
+          onChange={(e) => setLoginKey(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && login()}
           className="w-full border border-gray-300 rounded-xl px-4 py-3 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
         {message && <p className="text-red-500 text-sm mb-3">{message}</p>}
-        <button onClick={load} disabled={loading || !key} className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50">
+        <button onClick={login} disabled={loading || !loginKey} className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50">
           {loading ? "確認中..." : "ログイン"}
         </button>
       </div>
@@ -324,10 +347,23 @@ export default function AdminPage() {
       return a.is_approved ? 1 : -1;
     });
 
-  const pagedSalary = salarySubs.slice((salaryPage - 1) * ADMIN_PAGE_SIZE, salaryPage * ADMIN_PAGE_SIZE);
-  const salaryTotalPages = Math.ceil(salarySubs.length / ADMIN_PAGE_SIZE);
-  const pagedInterview = interviewSubs.slice((interviewPage - 1) * ADMIN_PAGE_SIZE, interviewPage * ADMIN_PAGE_SIZE);
-  const interviewTotalPages = Math.ceil(interviewSubs.length / ADMIN_PAGE_SIZE);
+  const filteredSalary = salarySubs.filter((s) => {
+    if (salaryFilterApproval === "pending" && s.is_approved) return false;
+    if (salaryFilterApproval === "approved" && !s.is_approved) return false;
+    if (salaryFilterSearch && !s.company_name.includes(salaryFilterSearch)) return false;
+    return true;
+  });
+  const pagedSalary = filteredSalary.slice((salaryPage - 1) * ADMIN_PAGE_SIZE, salaryPage * ADMIN_PAGE_SIZE);
+  const salaryTotalPages = Math.ceil(filteredSalary.length / ADMIN_PAGE_SIZE);
+
+  const filteredInterview = interviewSubs.filter((s) => {
+    if (interviewFilterApproval === "pending" && s.is_approved) return false;
+    if (interviewFilterApproval === "approved" && !s.is_approved) return false;
+    if (interviewFilterSearch && !s.company_name.includes(interviewFilterSearch)) return false;
+    return true;
+  });
+  const pagedInterview = filteredInterview.slice((interviewPage - 1) * ADMIN_PAGE_SIZE, interviewPage * ADMIN_PAGE_SIZE);
+  const interviewTotalPages = Math.ceil(filteredInterview.length / ADMIN_PAGE_SIZE);
   const pagedCompanies = sortedCompanies.slice((companyPage - 1) * ADMIN_PAGE_SIZE, companyPage * ADMIN_PAGE_SIZE);
   const companyTotalPages = Math.ceil(sortedCompanies.length / ADMIN_PAGE_SIZE);
 
@@ -410,8 +446,26 @@ export default function AdminPage() {
       {/* Salary submissions */}
       {tab === "salary" && (
         <section>
-          <h2 className="text-lg font-bold mb-4">給与投稿 ({salarySubs.length}件 / 承認待ち {pendingSalary}件)</h2>
-          {salarySubs.length === 0 ? <p className="text-gray-400">投稿はありません</p> : (
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            <h2 className="text-lg font-bold">給与投稿 ({filteredSalary.length}/{salarySubs.length}件)</h2>
+            <input
+              type="text"
+              placeholder="企業名で検索..."
+              value={salaryFilterSearch}
+              onChange={(e) => { setSalaryFilterSearch(e.target.value); setSalaryPage(1); }}
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 w-44"
+            />
+            <select
+              value={salaryFilterApproval}
+              onChange={(e) => { setSalaryFilterApproval(e.target.value); setSalaryPage(1); }}
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+            >
+              <option value="">承認状態: すべて</option>
+              <option value="pending">承認待ち</option>
+              <option value="approved">承認済み</option>
+            </select>
+          </div>
+          {filteredSalary.length === 0 ? <p className="text-gray-400">投稿はありません</p> : (
             <div className="space-y-3">
               {pagedSalary.map((s) => (
                 <div key={s.id} className={`bg-white border rounded-xl p-4 ${!s.is_approved ? "border-yellow-300 bg-yellow-50" : "border-gray-200"}`}>
@@ -499,8 +553,26 @@ export default function AdminPage() {
       {/* Interview submissions */}
       {tab === "interview" && (
         <section>
-          <h2 className="text-lg font-bold mb-4">面接投稿 ({interviewSubs.length}件 / 承認待ち {pendingInterview}件)</h2>
-          {interviewSubs.length === 0 ? <p className="text-gray-400">投稿はありません</p> : (
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            <h2 className="text-lg font-bold">面接投稿 ({filteredInterview.length}/{interviewSubs.length}件)</h2>
+            <input
+              type="text"
+              placeholder="企業名で検索..."
+              value={interviewFilterSearch}
+              onChange={(e) => { setInterviewFilterSearch(e.target.value); setInterviewPage(1); }}
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 w-44"
+            />
+            <select
+              value={interviewFilterApproval}
+              onChange={(e) => { setInterviewFilterApproval(e.target.value); setInterviewPage(1); }}
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+            >
+              <option value="">承認状態: すべて</option>
+              <option value="pending">承認待ち</option>
+              <option value="approved">承認済み</option>
+            </select>
+          </div>
+          {filteredInterview.length === 0 ? <p className="text-gray-400">投稿はありません</p> : (
             <div className="space-y-3">
               {pagedInterview.map((s) => (
                 <div key={s.id} className={`bg-white border rounded-xl p-4 ${!s.is_approved ? "border-yellow-300 bg-yellow-50" : "border-gray-200"}`}>
@@ -510,6 +582,13 @@ export default function AdminPage() {
                         <div>
                           <label className={labelClass}>職種</label>
                           <input value={interviewEditForm.job_title || ""} onChange={(e) => setInterviewEditForm((f) => ({ ...f, job_title: e.target.value }))} className={inputClass} />
+                        </div>
+                        <div>
+                          <label className={labelClass}>雇用形態</label>
+                          <select value={interviewEditForm.employment_type || ""} onChange={(e) => setInterviewEditForm((f) => ({ ...f, employment_type: e.target.value }))} className={selectClass}>
+                            <option value="">-</option>
+                            {EMPLOYMENT_TYPE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                          </select>
                         </div>
                         <div>
                           <label className={labelClass}>面接回数</label>
@@ -575,6 +654,7 @@ export default function AdminPage() {
                         </div>
                         <p className="text-sm text-gray-500">
                           {s.interview_rounds}回面接
+                          {s.employment_type && ` | ${s.employment_type}`}
                           {s.result && ` | ${s.result}`}
                           {s.difficulty && ` | ${s.difficulty}`}
                         </p>

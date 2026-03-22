@@ -11,6 +11,8 @@ export const JOB_TITLES = [
   "QAエンジニア",
   "プロダクトマネージャー",
   "エンジニアリングマネージャー",
+  "サポートエンジニア",
+  "プリセールスエンジニア",
   "その他",
 ] as const;
 
@@ -60,6 +62,8 @@ export const LOCATION_OPTIONS = [
 ] as const;
 
 export const RESULT_OPTIONS = ["合格", "不合格", "辞退", "選考中"] as const;
+
+export const EMPLOYMENT_TYPE_OPTIONS = ["新卒", "中途"] as const;
 
 export const DIFFICULTY_OPTIONS = [
   "とても簡単",

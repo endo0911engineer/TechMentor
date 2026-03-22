@@ -1,19 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List
 from pydantic import BaseModel
-import os
 from app.database import get_db
+from app.auth import verify_admin
 from app.models.industry import Industry
 
 router = APIRouter()
-
-ADMIN_KEY = os.getenv("ADMIN_KEY")
-
-
-def verify_admin(x_admin_key: Optional[str] = Header(None)):
-    if not ADMIN_KEY or x_admin_key != ADMIN_KEY:
-        raise HTTPException(status_code=403, detail="Invalid admin key")
 
 
 class IndustryRead(BaseModel):

@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
+from app.limiter import limiter
 from app.models.submission import SalarySubmission, InterviewSubmission
 from app.models.company import Company
 from app.schemas.submission import (
@@ -11,15 +12,40 @@ from app.schemas.submission import (
     InterviewSubmissionRead,
     InterviewSubmissionWithCompany,
 )
+import os
+import json
+import urllib.request
+import urllib.parse
 
 router = APIRouter()
 
 
+def _verify_recaptcha(token: str | None) -> None:
+    """reCAPTCHA v3 トークンを検証する。RECAPTCHA_SECRET_KEY 未設定時はスキップ（開発環境）。"""
+    secret = os.getenv("RECAPTCHA_SECRET_KEY", "")
+    if not secret:
+        return  # 開発環境ではスキップ
+    if not token:
+        raise HTTPException(status_code=400, detail="reCAPTCHA トークンが必要です")
+    try:
+        data = urllib.parse.urlencode({"secret": secret, "response": token}).encode()
+        with urllib.request.urlopen(
+            "https://www.google.com/recaptcha/api/siteverify", data=data, timeout=5
+        ) as resp:
+            result = json.loads(resp.read())
+    except Exception:
+        raise HTTPException(status_code=500, detail="reCAPTCHA 検証に失敗しました")
+    if not result.get("success") or result.get("score", 0) < 0.5:
+        raise HTTPException(status_code=400, detail="reCAPTCHA 検証に失敗しました")
+
+
 @router.post("/salary-submissions", response_model=SalarySubmissionRead, status_code=201)
+@limiter.limit("5/hour")
 def create_salary_submission(
-    data: SalarySubmissionCreate, db: Session = Depends(get_db)
+    request: Request, data: SalarySubmissionCreate, db: Session = Depends(get_db)
 ):
-    submission = SalarySubmission(**data.model_dump())
+    _verify_recaptcha(data.recaptcha_token)
+    submission = SalarySubmission(**data.model_dump(exclude={"recaptcha_token"}))
     db.add(submission)
     db.commit()
     db.refresh(submission)
@@ -27,10 +53,12 @@ def create_salary_submission(
 
 
 @router.post("/interview-submissions", response_model=InterviewSubmissionRead, status_code=201)
+@limiter.limit("5/hour")
 def create_interview_submission(
-    data: InterviewSubmissionCreate, db: Session = Depends(get_db)
+    request: Request, data: InterviewSubmissionCreate, db: Session = Depends(get_db)
 ):
-    submission = InterviewSubmission(**data.model_dump())
+    _verify_recaptcha(data.recaptcha_token)
+    submission = InterviewSubmission(**data.model_dump(exclude={"recaptcha_token"}))
     db.add(submission)
     db.commit()
     db.refresh(submission)

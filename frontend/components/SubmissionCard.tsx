@@ -126,12 +126,19 @@ export function InterviewCard({
         </div>
       </div>
 
-      {/* 難易度 */}
-      {s.difficulty && (
-        <span className="inline-block text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full mb-3">
-          難易度: {s.difficulty}
-        </span>
-      )}
+      {/* 雇用形態・難易度 */}
+      <div className="flex flex-wrap gap-2 mb-3">
+        {s.employment_type && (
+          <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+            {s.employment_type}
+          </span>
+        )}
+        {s.difficulty && (
+          <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
+            難易度: {s.difficulty}
+          </span>
+        )}
+      </div>
 
       {/* 面接内容（切り詰め） */}
       {checkedItems.length > 0 && (

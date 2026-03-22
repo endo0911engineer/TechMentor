@@ -1,5 +1,6 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
@@ -8,6 +9,9 @@ from app.routers import companies, submissions, articles, admin, industries
 from app.models.company import Company
 from app.models.submission import SalarySubmission, InterviewSubmission
 from app.models.contact import Contact
+from app.limiter import limiter
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.errors import RateLimitExceeded
 from alembic.config import Config
 from alembic import command
 import os
@@ -18,13 +22,27 @@ command.upgrade(alembic_cfg, "head")
 
 app = FastAPI(title="DevPay API", version="1.0.0")
 
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+
+_origins = ["http://localhost:3000"]
+if os.getenv("FRONTEND_ORIGIN"):
+    _origins.append(os.getenv("FRONTEND_ORIGIN"))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "リクエストが多すぎます。しばらく待ってから再試行してください。"},
+    )
 
 app.include_router(companies.router, prefix="/companies", tags=["companies"])
 app.include_router(submissions.router, tags=["submissions"])
@@ -45,7 +63,8 @@ class ContactCreate(BaseModel):
 
 
 @app.post("/contacts", status_code=201)
-def submit_contact(data: ContactCreate, db: Session = Depends(get_db)):
+@limiter.limit("3/hour")
+def submit_contact(request: Request, data: ContactCreate, db: Session = Depends(get_db)):
     contact = Contact(category=data.category, email=data.email, message=data.message)
     db.add(contact)
     db.commit()

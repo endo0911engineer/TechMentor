@@ -30,6 +30,7 @@ class InterviewSubmission(Base):
     interview_rounds = Column(Integer)
     result = Column(String(50))        # 合格/不合格/辞退/選考中
     difficulty = Column(String(50))    # とても簡単〜とても難しい
+    employment_type = Column(String(50))   # 新卒/中途
     tags = Column(Text)                # カンマ区切りタグ
     # 面接内容: JSON {"coding":{"checked":true,"comment":"..."}, ...}
     interview_content = Column(Text)

@@ -702,6 +702,8 @@ export interface components {
             company_name: string;
             /** Job Title */
             job_title?: string | null;
+            /** Employment Type */
+            employment_type?: string | null;
             /** Interview Rounds */
             interview_rounds?: number | null;
             /** Result */
@@ -723,8 +725,12 @@ export interface components {
             company_id: number;
             /** Job Title */
             job_title?: string | null;
+            /** Employment Type */
+            employment_type?: string | null;
             /** Interview Rounds */
             interview_rounds: number;
+            /** Recaptcha Token */
+            recaptcha_token?: string | null;
             /** Result */
             result?: string | null;
             /** Difficulty */
@@ -742,6 +748,8 @@ export interface components {
             company_id: number;
             /** Job Title */
             job_title?: string | null;
+            /** Employment Type */
+            employment_type?: string | null;
             /** Interview Rounds */
             interview_rounds?: number | null;
             /** Result */
@@ -762,6 +770,8 @@ export interface components {
         InterviewSubmissionUpdate: {
             /** Job Title */
             job_title?: string | null;
+            /** Employment Type */
+            employment_type?: string | null;
             /** Interview Rounds */
             interview_rounds?: number | null;
             /** Result */
@@ -852,6 +862,8 @@ export interface components {
             tech_stack?: string | null;
             /** Comment */
             comment?: string | null;
+            /** Recaptcha Token */
+            recaptcha_token?: string | null;
         };
         /** SalarySubmissionRead */
         SalarySubmissionRead: {
