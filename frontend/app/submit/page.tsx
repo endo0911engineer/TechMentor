@@ -610,7 +610,8 @@ function SubmitForm() {
           >
             {loading ? "送信中..." : "投稿する"}
           </button>
-          <p className="text-center text-xs text-gray-400">投稿内容は管理者が確認した後に公開されます</p>
+          <p className="text-center text-xs text-gray-400">投稿内容は管理者が確認した後に公開されます。</p>
+          <p className="text-center text-xs text-gray-400">企業秘密となり得る詳細な面接内容や、著しく不自然な年収情報などは掲載されない場合があります。</p>
         </form>
       )}
     </div>

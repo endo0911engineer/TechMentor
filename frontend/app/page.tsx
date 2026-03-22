@@ -92,7 +92,7 @@ export default async function HomePage() {
         <p className="text-xs font-semibold tracking-widest text-blue-500 uppercase mb-3">Share Your Experience</p>
         <h2 className="text-2xl font-bold text-gray-900">あなたの体験が、誰かの決断を変える</h2>
         <p className="mt-2 mb-4 text-gray-500 max-w-md mx-auto">
-          給与交渉・転職・面接対策。リアルなデータがエンジニアの選択肢を広げます。
+          DevPayは、日本のエンジニアの競争力を高めることを目指しています。<br />
         </p>
         <p className="mb-8 text-sm text-gray-400 max-w-sm mx-auto">
           企業規模や業界を問わず、すべてのエンジニアの声を歓迎します。<br />
